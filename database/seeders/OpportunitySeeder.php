@@ -83,7 +83,6 @@ class OpportunitySeeder extends Seeder
                     'phone' => $entry['phone'],
                     'type_id' => $typeId,
                     'status' => $entry['status'],
-                    'image' => null,
                 ]
             );
         }
