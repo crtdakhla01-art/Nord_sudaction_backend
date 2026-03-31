@@ -19,7 +19,6 @@ class Opportunity extends Model
         'phone',
         'email',
         'type_id',
-        'image',
         'status',
     ];
 
@@ -33,5 +32,10 @@ class Opportunity extends Model
     public function type()
     {
         return $this->belongsTo(TypeOpportunity::class, 'type_id');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(OpportunityImage::class)->orderBy('sort_order')->orderBy('id');
     }
 }

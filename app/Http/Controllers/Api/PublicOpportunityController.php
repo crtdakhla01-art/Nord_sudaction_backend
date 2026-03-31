@@ -5,14 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOpportunityRequest;
 use App\Models\Opportunity;
+use App\Models\TypeOpportunity;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class PublicOpportunityController extends Controller
 {
     public function index(): JsonResponse
     {
         $opportunities = Opportunity::query()
-            ->with('type:id,name')
+            ->with(['type:id,name', 'images:id,opportunity_id,path,sort_order'])
             ->where('status', 'accepted')
             ->latest()
             ->get();
@@ -26,7 +28,7 @@ class PublicOpportunityController extends Controller
             return response()->json(['message' => 'Not found.'], 404);
         }
 
-        $opportunity->load('type:id,name');
+        $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
 
         return response()->json($opportunity);
     }
@@ -34,14 +36,56 @@ class PublicOpportunityController extends Controller
     public function store(StoreOpportunityRequest $request): JsonResponse
     {
         $data = $request->validated();
+
+        $typeName = match ($data['type_key']) {
+            'investment' => 'Projets d\'investissement',
+            'commerce' => 'Fonds de commerce (tourisme, restauration...)',
+            'partnership' => 'Partenariats',
+            'calls' => 'Appels a projets',
+            default => 'Autre',
+        };
+
+        $type = TypeOpportunity::query()->firstOrCreate([
+            'name' => $typeName,
+        ]);
+
+        $data['type_id'] = $type->id;
+        unset($data['type_key']);
+
         $data['status'] = 'pending';
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('opportunities', 'public');
+        $storedImagePaths = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $uploadedImage) {
+                $storedImagePaths[] = $uploadedImage->store('opportunities', 'public');
+            }
         }
 
-        $opportunity = Opportunity::query()->create($data);
-        $opportunity->load('type:id,name');
+        // Backward compatibility for clients still sending a single "image" field.
+        if (empty($storedImagePaths) && $request->hasFile('image')) {
+            $storedImagePaths[] = $request->file('image')->store('opportunities', 'public');
+        }
+
+        $opportunity = DB::transaction(function () use ($data, $storedImagePaths) {
+            $opportunity = Opportunity::query()->create($data);
+
+            if (! empty($storedImagePaths)) {
+                $opportunity->images()->createMany(
+                    collect($storedImagePaths)
+                        ->values()
+                        ->map(fn (string $path, int $index) => [
+                            'path' => $path,
+                            'sort_order' => $index,
+                        ])
+                        ->all()
+                );
+            }
+
+            return $opportunity;
+        });
+
+        $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
 
         return response()->json([
             'message' => 'Opportunity submitted successfully and is pending review.',

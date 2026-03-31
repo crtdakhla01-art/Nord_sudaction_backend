@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
 
         User::query()->firstOrCreate([
             'email' => env('ADMIN_EMAIL', 'crtdakhla01@gmail.com'),
-        ], [
+        ],[
             'name' => env('ADMIN_NAME', 'NGO Admin'),
             'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
             'role_id' => $adminRoleId,

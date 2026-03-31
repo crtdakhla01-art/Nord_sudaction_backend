@@ -21,7 +21,7 @@ class UpdatePostRequest extends FormRequest
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'required', 'string'],
             'content' => ['sometimes', 'required', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'media' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,mp4,mov,avi,webm,mkv', 'max:102400'],
             'type' => ['sometimes', 'required', 'in:article,communique,media'],
             'external_link' => ['nullable', 'url', 'max:2048', 'required_if:type,media'],
             'status' => ['sometimes', 'required', 'in:draft,published'],

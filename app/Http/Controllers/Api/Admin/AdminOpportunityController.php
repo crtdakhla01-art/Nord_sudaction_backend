@@ -11,7 +11,7 @@ class AdminOpportunityController extends Controller
     public function index(): JsonResponse
     {
         $opportunities = Opportunity::query()
-            ->with('type:id,name')
+            ->with(['type:id,name', 'images:id,opportunity_id,path,sort_order'])
             ->latest()
             ->get();
 
@@ -20,7 +20,7 @@ class AdminOpportunityController extends Controller
 
     public function show(Opportunity $opportunity): JsonResponse
     {
-        $opportunity->load('type:id,name');
+        $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
 
         return response()->json($opportunity);
     }
@@ -31,7 +31,7 @@ class AdminOpportunityController extends Controller
 
         return response()->json([
             'message' => 'Opportunity accepted.',
-            'data' => $opportunity->fresh()->load('type:id,name'),
+            'data' => $opportunity->fresh()->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']),
         ]);
     }
 
@@ -41,7 +41,7 @@ class AdminOpportunityController extends Controller
 
         return response()->json([
             'message' => 'Opportunity rejected.',
-            'data' => $opportunity->fresh()->load('type:id,name'),
+            'data' => $opportunity->fresh()->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']),
         ]);
     }
 }

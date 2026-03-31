@@ -16,7 +16,7 @@ class Post extends Model
         'slug',
         'description',
         'content',
-        'image',
+        'media',
         'type',
         'external_link',
         'status',

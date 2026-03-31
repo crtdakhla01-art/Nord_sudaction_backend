@@ -39,8 +39,8 @@ class AdminPostController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('posts', 'public');
+        if ($request->hasFile('media')) {
+            $data['media'] = $request->file('media')->store('posts', 'public');
         }
 
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
@@ -63,12 +63,12 @@ class AdminPostController extends Controller
     {
         $data = $request->validated();
 
-        if ($request->hasFile('image')) {
-            if (!empty($post->image)) {
-                Storage::disk('public')->delete($post->image);
+        if ($request->hasFile('media')) {
+            if (!empty($post->media)) {
+                Storage::disk('public')->delete($post->media);
             }
 
-            $data['image'] = $request->file('image')->store('posts', 'public');
+            $data['media'] = $request->file('media')->store('posts', 'public');
         }
 
         if (array_key_exists('is_featured', $data)) {
@@ -86,8 +86,8 @@ class AdminPostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        if (!empty($post->image)) {
-            Storage::disk('public')->delete($post->image);
+        if (!empty($post->media)) {
+            Storage::disk('public')->delete($post->media);
         }
 
         $post->delete();

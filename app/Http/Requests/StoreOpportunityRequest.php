@@ -23,15 +23,17 @@ class StoreOpportunityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'titre' => ['nullable', 'string', 'max:255'],
-            'ville' => ['nullable', 'string', 'max:255'],
+            'titre' => ['required', 'string', 'max:255'],
+            'ville' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'budget' => ['required', 'numeric', 'min:0'],
-            'phone' => ['required', 'string', 'max:50'],
+            'budget' => ['nullable', 'numeric', 'min:0'],
+            'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['required', 'email', 'max:255'],
-            'type_id' => ['required', 'integer', 'exists:types_opportunities,id'],
+            'type_key' => ['required', 'string', 'in:investment,commerce,partnership,calls,other'],
+            'images' => ['nullable', 'array', 'max:10'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
