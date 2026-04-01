@@ -13,16 +13,19 @@ class ContactMessageSeeder extends Seeder
             [
                 'name' => 'Sami Benali',
                 'email' => 'sami@example.com',
+                'object' => 'Demande de bénévolat',
                 'message' => 'Bonjour, je souhaite devenir benevole dans vos actions locales.',
             ],
             [
                 'name' => 'Leila Amrani',
                 'email' => 'leila@example.com',
+                'object' => 'Proposition de partenariat',
                 'message' => 'Nous souhaitons proposer un partenariat avec notre association regionale.',
             ],
             [
                 'name' => 'Youssef Idrissi',
                 'email' => 'youssef@example.com',
+                'object' => 'Demande d\'informations',
                 'message' => 'Pouvez-vous partager les conditions pour publier une opportunite ?',
             ],
         ];

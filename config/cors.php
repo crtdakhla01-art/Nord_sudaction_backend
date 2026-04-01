@@ -16,7 +16,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://nord-sudaction-frontend.vercel.app',
+        'https://www.nordsudaction.ma',
+        'https://nordsudaction.ma',
+    ],
 
     'allowed_origins_patterns' => [],
 

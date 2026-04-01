@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             EventSeeder::class,
             ContactMessageSeeder::class,
             OpportunitySeeder::class,
+            GalleryImageSeeder::class,
         ]);
     }
 }

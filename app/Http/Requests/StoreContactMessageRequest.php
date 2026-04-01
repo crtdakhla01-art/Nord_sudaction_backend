@@ -25,6 +25,7 @@ class StoreContactMessageRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email:rfc,dns', 'max:255'],
+            'object' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:5000'],
         ];
     }
