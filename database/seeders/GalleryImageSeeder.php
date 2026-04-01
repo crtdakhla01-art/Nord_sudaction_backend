@@ -40,22 +40,32 @@ class GalleryImageSeeder extends Seeder
         }
 
         $processor = new ImageProcessingService(1200, 80);
-        $i = 1;
+
+        // --- Pass 1: move ALL files to a temp subfolder to avoid rename collisions ---
+        $tmpDir = $galleryDirectory . DIRECTORY_SEPARATOR . '_seed_tmp';
+        File::ensureDirectoryExists($tmpDir);
 
         foreach ($imageFiles as $file) {
+            File::move($file->getPathname(), $tmpDir . DIRECTORY_SEPARATOR . $file->getFilename());
+        }
+
+        // Re-collect from the temp folder (same sort order)
+        $tmpFiles = collect(File::files($tmpDir))
+            ->sortBy(fn ($f) => $f->getFilename())
+            ->values();
+
+        // --- Pass 2: process each file and write the final img_N.webp into gallary/ ---
+        $i = 1;
+
+        foreach ($tmpFiles as $file) {
             $filename  = $file->getFilename();
             $extension = strtolower($file->getExtension());
             $newName   = "img_{$i}.webp";
             $newPath   = $galleryDirectory . DIRECTORY_SEPARATOR . $newName;
 
             if ($extension === 'webp' && $file->getSize() < 512_000) {
-                // Already optimised WebP — just rename to img_n.webp
-                if ($file->getPathname() !== $newPath) {
-                    // Use a temp name first to avoid collisions during renaming
-                    $tmpPath = $galleryDirectory . DIRECTORY_SEPARATOR . "_tmp_{$i}.webp";
-                    File::move($file->getPathname(), $tmpPath);
-                    File::move($tmpPath, $newPath);
-                }
+                // Already optimised WebP — just move to final name
+                File::move($file->getPathname(), $newPath);
             } else {
                 // Convert to optimised WebP with clean name
                 $result = $processor->processFile($file->getPathname(), $newPath);
@@ -65,10 +75,7 @@ class GalleryImageSeeder extends Seeder
                     continue;
                 }
 
-                // Delete original if it was a different file
-                if ($file->getPathname() !== $newPath && File::exists($file->getPathname())) {
-                    File::delete($file->getPathname());
-                }
+                File::delete($file->getPathname());
             }
 
             $diskPath = 'gallary/' . $newName;
@@ -80,6 +87,9 @@ class GalleryImageSeeder extends Seeder
 
             $i++;
         }
+
+        // Remove the temp folder
+        File::deleteDirectory($tmpDir);
 
         // Clean up the /optimized subfolder if it exists (no longer needed)
         $optimizedDir = $galleryDirectory . DIRECTORY_SEPARATOR . 'optimized';
