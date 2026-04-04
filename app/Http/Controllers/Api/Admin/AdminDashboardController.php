@@ -48,7 +48,8 @@ class AdminDashboardController extends Controller
                 'published' => Post::query()->where('status', 'published')->count(),
                 'draft' => Post::query()->where('status', 'draft')->count(),
                 'featured' => Post::query()->where('is_featured', true)->count(),
-                'total_views' => (int) Post::query()->sum('view_count'),
+                // Kept for backward compatibility after removing posts.view_count.
+                'total_views' => 0,
             ],
             'contacts' => [
                 'total' => ContactMessage::query()->count(),

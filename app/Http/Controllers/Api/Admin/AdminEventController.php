@@ -216,7 +216,8 @@ class AdminEventController extends Controller
         $mimeType = strtolower($file->getMimeType() ?? '');
 
         $isValid = match ($expectedType) {
-            'image' => str_starts_with($mimeType, 'image/') && in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true),
+            'image' => str_starts_with($mimeType, 'image/')
+                || in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'svg', 'tiff', 'tif', 'ico', 'avif', 'heic', 'heif'], true),
             'video' => str_starts_with($mimeType, 'video/') && in_array($extension, ['mp4', 'webm', 'ogg', 'mov'], true),
             default => false,
         };

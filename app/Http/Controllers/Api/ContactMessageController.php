@@ -14,14 +14,16 @@ class ContactMessageController extends Controller
     public function store(StoreContactMessageRequest $request): JsonResponse
     {
         $payload = $request->validated();
+        $payload['phone'] = isset($payload['phone']) && trim((string) $payload['phone']) !== ''
+            ? $payload['phone']
+            : null;
 
         $contactMessage = ContactMessage::query()->create($payload);
 
-        $recipient = env('CONTACT_RECIPIENT_EMAIL', 'contact@nordsudaction.org');
-
+        $recipient = config('mail.contact_recipient', 'contact@nordsudaction.org');
         try {
             Mail::raw(
-                "New contact message\n\nName: {$payload['name']}\nEmail: {$payload['email']}\nObject: {$payload['object']}\n\nMessage:\n{$payload['message']}",
+                "New contact message\n\nName: {$payload['name']}\nEmail: {$payload['email']}\nPhone: " . ($payload['phone'] ?? '-') . "\nObject: {$payload['object']}\n\nMessage:\n{$payload['message']}",
                 function ($message) use ($payload, $recipient): void {
                     $message->to($recipient)
                         ->replyTo($payload['email'], $payload['name'])
@@ -39,7 +41,7 @@ class ContactMessageController extends Controller
             return response()->json([
                 'message' => 'Message saved, but email delivery failed.',
                 'data' => $contactMessage,
-            ], 500);
+            ], 202);
         }
 
         return response()->json([

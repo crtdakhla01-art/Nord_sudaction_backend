@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -17,12 +16,10 @@ class Post extends Model
         'description',
         'content',
         'media',
-        'type',
         'external_link',
         'status',
         'is_featured',
         'published_at',
-        'view_count',
     ];
 
     protected function casts(): array
@@ -30,7 +27,6 @@ class Post extends Model
         return [
             'is_featured' => 'boolean',
             'published_at' => 'datetime',
-            'view_count' => 'integer',
         ];
     }
 
@@ -45,22 +41,7 @@ class Post extends Model
         });
     }
 
-    public function scopeArticle(Builder $query): Builder
-    {
-        return $query->where('type', 'article');
-    }
-
-    public function scopeCommunique(Builder $query): Builder
-    {
-        return $query->where('type', 'communique');
-    }
-
-    public function scopeMedia(Builder $query): Builder
-    {
-        return $query->where('type', 'media');
-    }
-
-    public function scopePublished(Builder $query): Builder
+    public function scopePublished(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('status', 'published');
     }
@@ -76,7 +57,7 @@ class Post extends Model
         $counter = 1;
 
         while (static::query()
-            ->when($ignoreId, fn (Builder $query) => $query->where('id', '!=', $ignoreId))
+            ->when($ignoreId, fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('id', '!=', $ignoreId))
             ->where('slug', $slug)
             ->exists()) {
             $slug = $baseSlug.'-'.$counter;

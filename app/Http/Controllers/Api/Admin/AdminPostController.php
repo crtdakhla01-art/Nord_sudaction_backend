@@ -14,15 +14,11 @@ class AdminPostController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $type = $request->query('type');
         $status = $request->query('status');
         $search = $request->query('search');
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
         $posts = Post::query()
-            ->when(in_array($type, ['article', 'communique', 'media'], true), function ($query) use ($type) {
-                $query->where('type', $type);
-            })
             ->when(in_array($status, ['draft', 'published'], true), function ($query) use ($status) {
                 $query->where('status', $status);
             })
