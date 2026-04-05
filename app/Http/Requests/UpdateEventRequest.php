@@ -15,6 +15,29 @@ class UpdateEventRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $gallery = collect($this->input('gallery', []))
+            ->map(function ($item) {
+                if (!is_array($item)) {
+                    return $item;
+                }
+
+                if (array_key_exists('link', $item) && is_string($item['link'])) {
+                    $trimmed = trim($item['link']);
+                    $item['link'] = $trimmed === '' ? null : $trimmed;
+                }
+
+                return $item;
+            })
+            ->values()
+            ->all();
+
+        $this->merge([
+            'gallery' => $gallery,
+        ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

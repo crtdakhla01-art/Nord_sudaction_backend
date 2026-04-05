@@ -14,6 +14,7 @@ class GalleryController extends Controller
     public function index(): JsonResponse
     {
         $galleryImages = GalleryImage::query()
+            ->with('category')
             ->orderBy('id')
             ->paginate(30);
 
@@ -23,7 +24,8 @@ class GalleryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'images'   => 'required|array|min:1',
+            'gallery_categorie_id' => ['required', 'integer', 'exists:gallery_categories,id'],
+            'images' => 'required|array|min:1',
             'images.*' => 'required|image|max:51200', // 50 MB max per file
         ]);
 
@@ -38,15 +40,34 @@ class GalleryController extends Controller
             }
 
             $created[] = GalleryImage::create([
-                'filename'  => $result['filename'],
+                'filename' => $result['filename'],
                 'disk_path' => $result['disk_path'],
+                'gallery_categorie_id' => (int) $request->input('gallery_categorie_id'),
             ]);
         }
 
+        $created = GalleryImage::query()
+            ->with('category')
+            ->whereIn('id', collect($created)->pluck('id'))
+            ->get();
+
         return response()->json([
             'message' => count($created) . ' image(s) uploaded.',
-            'data'    => $created,
+            'data' => $created,
         ], 201);
+    }
+
+    public function update(Request $request, GalleryImage $gallery_image): JsonResponse
+    {
+        $data = $request->validate([
+            'gallery_categorie_id' => ['required', 'integer', 'exists:gallery_categories,id'],
+        ]);
+
+        $gallery_image->update([
+            'gallery_categorie_id' => $data['gallery_categorie_id'],
+        ]);
+
+        return response()->json($gallery_image->fresh()->load('category'));
     }
 
     public function destroy(GalleryImage $gallery_image): JsonResponse

@@ -33,8 +33,8 @@ class StoreOpportunityRequest extends FormRequest
             'email' => ['required', 'email', 'max:255'],
             'type_key' => ['required', 'string', 'in:investment,commerce,partnership,calls,other'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:20480'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480'],
         ];
     }
 }
