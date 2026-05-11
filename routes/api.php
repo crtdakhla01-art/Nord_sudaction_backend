@@ -3,12 +3,15 @@
 use App\Http\Controllers\Api\Admin\AdminActivityController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminEventController;
+use App\Http\Controllers\Api\Admin\AdminInscriptionController;
 use App\Http\Controllers\Api\Admin\AdminOpportunityController;
 use App\Http\Controllers\Api\Admin\AdminPostController;
 use App\Http\Controllers\Api\Admin\AuthController;
 use App\Http\Controllers\Api\ContactMessageController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\GalleryCategoryController;
+use App\Http\Controllers\Api\InscriptionController;
+use App\Http\Controllers\Api\NewsletterSubscriberController;
 use App\Http\Controllers\Api\PublicEventController;
 use App\Http\Controllers\Api\PublicOpportunityController;
 use App\Http\Controllers\Api\PublicPostController;
@@ -26,6 +29,8 @@ Route::get('/gallery-categories', [GalleryCategoryController::class, 'index']);
 Route::get('/types-opportunities', [PublicTypeOpportunityController::class, 'index']);
 Route::post('/opportunities', [PublicOpportunityController::class, 'store']);
 Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/inscriptions', [InscriptionController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'store'])->middleware('throttle:5,1');
 
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -51,6 +56,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/opportunities/{opportunity}', [AdminOpportunityController::class, 'show']);
             Route::put('/opportunities/{opportunity}/accept', [AdminOpportunityController::class, 'accept']);
             Route::put('/opportunities/{opportunity}/reject', [AdminOpportunityController::class, 'reject']);
+            Route::get('/inscriptions', [AdminInscriptionController::class, 'index']);
+            Route::put('/inscriptions/{inscription}/payment-status', [AdminInscriptionController::class, 'updatePaymentStatus']);
         });
 
         Route::middleware('role:admin')->group(function () {

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\OpportunitySubmitted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOpportunityRequest;
-use App\Jobs\SendOpportunityNotificationMail;
 use App\Models\Opportunity;
 use App\Models\TypeOpportunity;
 use Illuminate\Http\JsonResponse;
@@ -88,8 +88,7 @@ class PublicOpportunityController extends Controller
 
         $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
 
-        // Send notification after the HTTP response so the user does not wait for mail work.
-        SendOpportunityNotificationMail::dispatchAfterResponse($opportunity->id);
+        event(new OpportunitySubmitted($opportunity->id));
 
         return response()->json([
             'message' => 'Opportunity submitted successfully and is pending review.',

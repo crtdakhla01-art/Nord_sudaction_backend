@@ -1,26 +1,21 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Listeners;
 
+use App\Events\OpportunitySubmitted;
 use App\Models\Opportunity;
-use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
-class SendOpportunityNotificationMail
+class SendOpportunitySubmissionEmail
 {
-    use Dispatchable;
 
-    public function __construct(private readonly int $opportunityId)
-    {
-    }
-
-    public function handle(): void
+    public function handle(OpportunitySubmitted $event): void
     {
         $opportunity = Opportunity::query()
             ->with(['type:id,name', 'images:id,opportunity_id,path,sort_order'])
-            ->find($this->opportunityId);
+            ->find($event->opportunityId);
 
         if (! $opportunity) {
             return;
@@ -33,11 +28,11 @@ class SendOpportunityNotificationMail
                 ->map(fn ($image) => Storage::disk('public')->url($image->path))
                 ->values();
 
-            $body = "Nouvelle opportunité soumise\n\n"
+            $body = "Nouvelle opportunite soumise\n\n"
                 . "Titre: {$opportunity->titre}\n"
                 . "Nom: {$opportunity->first_name} {$opportunity->last_name}\n"
                 . "Email: {$opportunity->email}\n"
-                . "Téléphone: {$opportunity->phone}\n"
+                . "Telephone: {$opportunity->phone}\n"
                 . "Ville: {$opportunity->ville}\n"
                 . "Type: " . ($opportunity->type?->name ?? '-') . "\n"
                 . "Budget: " . ($opportunity->budget ? number_format($opportunity->budget, 2, ',', ' ') . ' MAD' : '-') . "\n"
@@ -48,14 +43,14 @@ class SendOpportunityNotificationMail
                 $body .= "\n\nLiens des images:\n- " . $imageLinks->implode("\n- ");
             }
 
-            Mail::raw($body, function ($message) use ($opportunity, $recipient) {
+            Mail::raw($body, function ($message) use ($opportunity, $recipient): void {
                 $message->to($recipient)
                     ->replyTo($opportunity->email, $opportunity->first_name . ' ' . $opportunity->last_name)
                     ->subject("Nouvelle opportunité soumise : {$opportunity->titre}");
             });
         } catch (\Throwable $exception) {
             Log::warning('Opportunity notification mail failed', [
-                'opportunity_id' => $this->opportunityId,
+                'opportunity_id' => $event->opportunityId,
                 'recipient' => $recipient,
                 'error' => $exception->getMessage(),
             ]);

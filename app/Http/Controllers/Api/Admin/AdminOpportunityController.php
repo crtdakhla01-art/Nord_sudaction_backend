@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Events\OpportunityAccepted;
 use App\Http\Controllers\Controller;
 use App\Models\Opportunity;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,12 @@ class AdminOpportunityController extends Controller
 
     public function accept(Opportunity $opportunity): JsonResponse
     {
+        $wasAccepted = $opportunity->status === 'accepted';
         $opportunity->update(['status' => 'accepted']);
+
+        if (! $wasAccepted) {
+            event(new OpportunityAccepted($opportunity->id));
+        }
 
         return response()->json([
             'message' => 'Opportunity accepted.',

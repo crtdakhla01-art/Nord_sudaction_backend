@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'newsletter' => [
+        'public_base_url' => env('NEWSLETTER_PUBLIC_BASE_URL', 'https://www.nordsudaction.ma'),
+    ],
+
 ];

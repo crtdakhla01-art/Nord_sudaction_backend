@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Events\OtpCodeGenerated;
 use App\Http\Controllers\Controller;
 use App\Models\OtpCode;
 use App\Models\User;
@@ -9,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -53,24 +53,7 @@ class AuthController extends Controller
             'expires_at' => now()->addMinutes(5),
         ]);
 
-        try {
-            Mail::raw("Your verification code is: {$plainCode}", function ($message) use ($user): void {
-                $message->to($user->email)
-                    ->subject('Your OTP Verification Code');
-            });
-        } catch (\Throwable $exception) {
-            OtpCode::query()->where('user_id', $user->id)->delete();
-
-            Log::warning('OTP mail send failed', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Failed to send OTP email. Please try again.',
-            ], 500);
-        }
+        event(new OtpCodeGenerated($user->id, $plainCode));
 
         Log::info('OTP generated', [
             'user_id' => $user->id,

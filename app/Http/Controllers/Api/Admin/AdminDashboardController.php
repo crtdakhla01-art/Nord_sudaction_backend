@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use App\Models\Event;
+use App\Models\Inscription;
 use App\Models\Opportunity;
 use App\Models\Post;
 use App\Models\User;
@@ -77,6 +78,11 @@ class AdminDashboardController extends Controller
                         ->where('created_at', '>=', now()->subDays(7))
                         ->count()),
                 ],
+                'inscriptions' => [
+                    'total' => $safeCount('inscriptions.total', fn () => Inscription::query()->count()),
+                    'paid' => $safeCount('inscriptions.paid', fn () => Inscription::query()->where('is_paid', true)->count()),
+                    'unpaid' => $safeCount('inscriptions.unpaid', fn () => Inscription::query()->where('is_paid', false)->count()),
+                ],
             ];
 
             return response()->json([
@@ -101,6 +107,7 @@ class AdminDashboardController extends Controller
                     'events' => ['total' => 0, 'upcoming' => 0, 'passed' => 0],
                     'posts' => ['total' => 0, 'published' => 0, 'draft' => 0, 'featured' => 0, 'total_views' => 0],
                     'contacts' => ['total' => 0, 'last_7_days' => 0],
+                    'inscriptions' => ['total' => 0, 'paid' => 0, 'unpaid' => 0],
                 ],
             ]);
         }

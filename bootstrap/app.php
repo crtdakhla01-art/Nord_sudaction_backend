@@ -22,15 +22,32 @@ return Application::configure(basePath: dirname(__DIR__))
         // is visible in the console instead of the generic "Server Error" page.
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                $status  = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return response()->json([
+                        'error' => true,
+                        'status' => $e->status,
+                        'exception' => get_class($e),
+                        'message' => $e->getMessage(),
+                        'errors' => $e->errors(),
+                    ], $e->status);
+                }
+
+                $status = method_exists($e, 'getStatusCode')
+                    ? $e->getStatusCode()
+                    : (method_exists($e, 'status') ? $e->status() : 500);
+
                 $payload = [
                     'error'     => true,
                     'status'    => $status,
                     'exception' => get_class($e),
                     'message'   => $e->getMessage(),
-                    'file'      => $e->getFile(),
-                    'line'      => $e->getLine(),
                 ];
+
+                if ((bool) config('app.debug')) {
+                    $payload['file'] = $e->getFile();
+                    $payload['line'] = $e->getLine();
+                }
+
                 // Include previous exception when present (e.g. PDOException inside QueryException)
                 if ($e->getPrevious()) {
                     $payload['caused_by'] = [

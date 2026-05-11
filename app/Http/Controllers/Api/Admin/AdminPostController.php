@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Events\PostPublished;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
@@ -47,6 +48,10 @@ class AdminPostController extends Controller
 
         $post = Post::query()->create($data);
 
+        if ($post->status === 'published') {
+            event(new PostPublished($post->id));
+        }
+
         return response()->json($post, 201);
     }
 
@@ -57,6 +62,7 @@ class AdminPostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
+        $wasPublished = $post->status === 'published';
         $data = $request->validated();
 
         if ($request->hasFile('media')) {
@@ -76,6 +82,10 @@ class AdminPostController extends Controller
         }
 
         $post->update($data);
+
+        if (! $wasPublished && $post->fresh()->status === 'published') {
+            event(new PostPublished($post->id));
+        }
 
         return response()->json($post->fresh());
     }
