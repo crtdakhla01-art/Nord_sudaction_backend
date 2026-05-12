@@ -11,8 +11,8 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminRoleId = Role::query()->where('name', 'admin')->value('id');
-        $managerRoleId = Role::query()->where('name', 'manager')->value('id');
+        $adminRoleId = Role::query()->where('name', Role::ADMIN)->value('id');
+        $managerRoleId = Role::query()->where('name', Role::MANAGER)->value('id');
 
         User::query()->firstOrCreate([
             'email' => env('ADMIN_EMAIL', 'crtdakhla01@gmail.com'),

@@ -11,12 +11,14 @@ use Illuminate\Support\Facades\Storage;
 
 class GalleryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $perPage = min(max((int) $request->query('per_page', 12), 1), 50);
+
         $galleryImages = GalleryImage::query()
             ->with('category')
             ->orderBy('id')
-            ->paginate(30);
+            ->paginate($perPage);
 
         return response()->json($galleryImages);
     }

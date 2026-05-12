@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +47,7 @@ class AdminPostController extends Controller
             $data['published_at'] = now();
         }
 
-        $post = Post::query()->create($data);
+        $post = $this->createPostWithSlugRetry($data);
 
         if ($post->status === 'published') {
             event(new PostPublished($post->id));
@@ -81,7 +82,7 @@ class AdminPostController extends Controller
             $data['published_at'] = now();
         }
 
-        $post->update($data);
+        $this->updatePostWithSlugRetry($post, $data);
 
         if (! $wasPublished && $post->fresh()->status === 'published') {
             event(new PostPublished($post->id));
@@ -101,5 +102,53 @@ class AdminPostController extends Controller
         return response()->json([
             'message' => 'Post deleted successfully.',
         ]);
+    }
+
+    private function createPostWithSlugRetry(array $data): Post
+    {
+        $maxAttempts = 3;
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            try {
+                return Post::query()->create($data);
+            } catch (QueryException $exception) {
+                if (! $this->isSlugDuplicateException($exception) || $attempt === $maxAttempts - 1) {
+                    throw $exception;
+                }
+
+                $data['slug'] = Post::generateRetrySlug((string) ($data['title'] ?? 'post'));
+            }
+        }
+
+        throw new \RuntimeException('Unable to create post with a unique slug.');
+    }
+
+    private function updatePostWithSlugRetry(Post $post, array $data): void
+    {
+        $maxAttempts = 3;
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            try {
+                $post->update($data);
+                return;
+            } catch (QueryException $exception) {
+                if (! $this->isSlugDuplicateException($exception) || $attempt === $maxAttempts - 1) {
+                    throw $exception;
+                }
+
+                $data['slug'] = Post::generateRetrySlug((string) ($data['title'] ?? $post->title));
+            }
+        }
+
+        throw new \RuntimeException('Unable to update post with a unique slug.');
+    }
+
+    private function isSlugDuplicateException(QueryException $exception): bool
+    {
+        $message = strtolower($exception->getMessage());
+
+        return str_contains($message, 'duplicate')
+            && str_contains($message, 'slug')
+            && str_contains($message, 'posts');
     }
 }

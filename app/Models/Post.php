@@ -33,6 +33,11 @@ class Post extends Model
     protected static function booted(): void
     {
         static::saving(function (Post $post) {
+            // Keep explicitly assigned slug values (used by retry logic on slug collisions).
+            if (!$post->exists && !empty($post->slug)) {
+                return;
+            }
+
             if (!$post->isDirty('title') && !empty($post->slug)) {
                 return;
             }
@@ -65,5 +70,15 @@ class Post extends Model
         }
 
         return $slug;
+    }
+
+    public static function generateRetrySlug(string $title): string
+    {
+        $baseSlug = Str::slug($title);
+        if ($baseSlug === '') {
+            $baseSlug = 'post';
+        }
+
+        return $baseSlug.'-'.Str::lower(Str::random(6));
     }
 }

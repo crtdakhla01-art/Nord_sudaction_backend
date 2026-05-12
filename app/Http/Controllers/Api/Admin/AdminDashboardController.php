@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Inscription;
 use App\Models\Opportunity;
 use App\Models\Post;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -26,7 +27,7 @@ class AdminDashboardController extends Controller
                     return (int) $query();
                 } catch (Throwable $exception) {
                     try {
-                        Log::warning('Admin dashboard metric query failed', [
+                        Log::error('Admin dashboard metric query failed', [
                             'metric' => $metric,
                             'error' => $exception->getMessage(),
                         ]);
@@ -42,8 +43,8 @@ class AdminDashboardController extends Controller
                 'generated_at' => now()->toIso8601String(),
                 'users' => [
                     'total' => $safeCount('users.total', fn () => User::query()->count()),
-                    'admins' => $safeCount('users.admins', fn () => User::query()->whereHas('role', fn ($query) => $query->where('name', 'admin'))->count()),
-                    'managers' => $safeCount('users.managers', fn () => User::query()->whereHas('role', fn ($query) => $query->where('name', 'manager'))->count()),
+                    'admins' => $safeCount('users.admins', fn () => User::query()->whereHas('role', fn ($query) => $query->where('name', Role::ADMIN))->count()),
+                    'managers' => $safeCount('users.managers', fn () => User::query()->whereHas('role', fn ($query) => $query->where('name', Role::MANAGER))->count()),
                 ],
                 'opportunities' => [
                     'total' => $safeCount('opportunities.total', fn () => Opportunity::query()->count()),

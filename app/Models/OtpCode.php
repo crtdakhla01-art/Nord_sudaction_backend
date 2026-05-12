@@ -10,13 +10,12 @@ class OtpCode extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
         'code',
         'expires_at',
-        'created_at',
     ];
 
     protected function casts(): array

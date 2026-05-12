@@ -20,7 +20,7 @@ class UpdatePostRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'content' => ['sometimes', 'required', 'string'],
+            'content' => ['sometimes', 'required', 'string', 'max:100000'],
             'media' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,mp4,mov,avi,webm,mkv', 'max:102400'],
             'external_link' => ['nullable', 'url', 'max:2048'],
             'status' => ['sometimes', 'required', 'in:draft,published'],

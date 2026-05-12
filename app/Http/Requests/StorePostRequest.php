@@ -20,7 +20,7 @@ class StorePostRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'content' => ['required', 'string'],
+            'content' => ['required', 'string', 'max:100000'],
             'media' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,mp4,mov,avi,webm,mkv', 'max:102400'],
             'external_link' => ['nullable', 'url', 'max:2048'],
             'status' => ['required', 'in:draft,published'],

@@ -18,10 +18,8 @@ return [
 
     'allowed_origins' => [
         'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:5174',
-        'http://127.0.0.1:5174',
-        'https://nord-sudaction-frontend.vercel.app',
+        'https://www.nordsudaction.org',
+        'https://nordsudaction.org',
         'https://www.nordsudaction.ma',
         'https://nordsudaction.ma',
     ],

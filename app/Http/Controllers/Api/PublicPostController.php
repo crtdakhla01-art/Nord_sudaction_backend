@@ -12,7 +12,7 @@ class PublicPostController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
-        $perPage = min(max((int) $request->query('per_page', 9), 1), 50);
+        $perPage = min(max((int) $request->query('per_page', 12), 1), 50);
 
         $posts = Post::query()
             ->published()
