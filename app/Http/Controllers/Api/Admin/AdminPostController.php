@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
+use App\Services\HtmlSanitizationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,10 @@ class AdminPostController extends Controller
 
         $data['is_featured'] = (bool) ($data['is_featured'] ?? false);
 
+        // Sanitize rich HTML content to prevent XSS.
+        $sanitizer = new HtmlSanitizationService();
+        $data['content'] = $sanitizer->sanitize($data['content'] ?? '');
+
         if (($data['status'] ?? null) === 'published' && empty($data['published_at'])) {
             $data['published_at'] = now();
         }
@@ -76,6 +81,12 @@ class AdminPostController extends Controller
 
         if (array_key_exists('is_featured', $data)) {
             $data['is_featured'] = (bool) $data['is_featured'];
+        }
+
+        // Sanitize rich HTML content to prevent XSS.
+        if (array_key_exists('content', $data)) {
+            $sanitizer = new HtmlSanitizationService();
+            $data['content'] = $sanitizer->sanitize($data['content'] ?? '');
         }
 
         if (($data['status'] ?? null) === 'published' && empty($data['published_at']) && empty($post->published_at)) {

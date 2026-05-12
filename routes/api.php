@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\AdminOpportunityController;
 use App\Http\Controllers\Api\Admin\AdminPostController;
 use App\Http\Controllers\Api\Admin\AuthController;
 use App\Http\Controllers\Api\ContactMessageController;
+use App\Http\Controllers\Api\CounterController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\GalleryCategoryController;
 use App\Http\Controllers\Api\InscriptionController;
@@ -23,13 +24,14 @@ Route::get('/events', [PublicEventController::class, 'index']);
 Route::get('/events/{event}', [PublicEventController::class, 'show']);
 Route::get('/opportunities', [PublicOpportunityController::class, 'index']);
 Route::get('/opportunities/{opportunity}', [PublicOpportunityController::class, 'show']);
+Route::post('/opportunities', [PublicOpportunityController::class, 'store'])->middleware('throttle:5,1');
 Route::get('/posts', [PublicPostController::class, 'index']);
 Route::get('/posts/{post:slug}', [PublicPostController::class, 'show']);
 Route::get('/activities', [AdminActivityController::class, 'index']);
 Route::get('/gallery', [GalleryController::class, 'index']);
 Route::get('/gallery-categories', [GalleryCategoryController::class, 'index']);
 Route::get('/types-opportunities', [PublicTypeOpportunityController::class, 'index']);
-Route::post('/opportunities', [PublicOpportunityController::class, 'store']);
+Route::get('/visitor-up', [CounterController::class, 'up'])->middleware('throttle:10,1');
 Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:5,1');
 Route::post('/inscriptions', [InscriptionController::class, 'store'])->middleware('throttle:5,1');
 Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'store'])->middleware('throttle:5,1');
@@ -38,6 +40,9 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 });
+
+// CSRF cookie endpoint for Sanctum stateful SPA auth.
+Route::get('/csrf-cookie', fn() => response()->json(['message' => 'CSRF cookie set.']));
 
 Route::prefix('admin')->group(function () {
     // Public read — activities list used by the frontend without auth.
@@ -50,6 +55,7 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 
         Route::middleware('role:'.Role::ADMIN.','.Role::MANAGER)->group(function () {

@@ -12,20 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->statefulApi();
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Always return structured JSON for API requests so the real error
-        // is visible in the console instead of the generic "Server Error" page.
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 if ($e instanceof \Illuminate\Validation\ValidationException) {
                     return response()->json([
-                        'error' => true,
-                        'status' => $e->status,
                         'exception' => get_class($e),
                         'message' => $e->getMessage(),
                         'errors' => $e->errors(),
@@ -36,26 +33,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     ? $e->getStatusCode()
                     : (method_exists($e, 'status') ? $e->status() : 500);
 
-                $payload = [
-                    'error'     => true,
-                    'status'    => $status,
-                    'exception' => get_class($e),
-                    'message'   => $e->getMessage(),
-                ];
+                $message = match ($status) {
+                    401 => 'Unauthenticated.',
+                    403 => 'Forbidden.',
+                    404 => 'Not found.',
+                    405 => 'Method not allowed.',
+                    419 => 'Page expired.',
+                    422 => 'The given data was invalid.',
+                    429 => 'Too many requests.',
+                    default => 'Server error',
+                };
 
-                if ((bool) config('app.debug')) {
-                    $payload['file'] = $e->getFile();
-                    $payload['line'] = $e->getLine();
-                }
-
-                // Include previous exception when present (e.g. PDOException inside QueryException)
-                if ($e->getPrevious()) {
-                    $payload['caused_by'] = [
-                        'exception' => get_class($e->getPrevious()),
-                        'message'   => $e->getPrevious()->getMessage(),
-                    ];
-                }
-                return response()->json($payload, $status >= 400 ? $status : 500);
+                return response()->json([
+                    'message' => $message,
+                ], $status >= 400 ? $status : 500);
             }
         });
     })->create();

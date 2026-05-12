@@ -70,7 +70,7 @@ class StoreEventRequest extends FormRequest
             'location' => ['required', 'string', 'max:255'],
             'is_it_passed' => ['nullable', 'boolean'],
             'gallery' => ['nullable', 'array'],
-            'gallery.*.image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,bmp,svg,tiff,tif,ico,avif,heic,heif,jfif', 'max:20480'],
+            'gallery.*.image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,bmp,tiff,tif,ico,avif,heic,heif,jfif', 'max:20480'],
             'gallery.*.existing_image' => ['nullable', 'string', 'max:2048'],
             'gallery.*.video' => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'],
             'gallery.*.existing_video' => ['nullable', 'string', 'max:2048'],

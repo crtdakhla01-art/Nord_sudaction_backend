@@ -113,10 +113,11 @@ class AuthController extends Controller
 
         $otp->delete();
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        // For stateful SPA auth: create a token that Sanctum will bind to a session cookie.
+        // The token is never returned to the frontend; Sanctum handles it automatically via the cookie.
+        $user->createToken('api-token');
 
         return response()->json([
-            'token' => $token,
             'user' => $user,
         ]);
     }
@@ -127,6 +128,21 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out successfully.',
+        ]);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user()?->load('role');
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        return response()->json([
+            'user' => $user,
         ]);
     }
 }

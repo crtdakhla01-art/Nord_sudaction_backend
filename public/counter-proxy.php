@@ -2,28 +2,15 @@
 
 declare(strict_types=1);
 
+// This file is deprecated. Use /api/visitor-up instead.
+// It remains for backwards compatibility but returns 410 Gone.
+
+http_response_code(410);
 header('Content-Type: application/json; charset=utf-8');
 
-$apiUrl = 'https://api.counterapi.dev/v2/conseil-tourisme-dakhlas-team-3599/nordsudaction_visitore/up';
-
-$context = stream_context_create([
-    'http' => [
-        'method' => 'GET',
-        'timeout' => 10,
-        'ignore_errors' => true,
-        'header' => "Accept: application/json\r\n",
-    ],
+echo json_encode([
+    'code' => 410,
+    'message' => 'This endpoint is deprecated. Use /api/visitor-up instead.',
 ]);
 
-$response = @file_get_contents($apiUrl, false, $context);
-
-if ($response === false) {
-    http_response_code(502);
-    echo json_encode([
-        'code' => 502,
-        'message' => 'Unable to reach Counter API.',
-    ]);
-    exit;
-}
-
-echo $response;
+exit;
