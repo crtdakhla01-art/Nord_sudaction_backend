@@ -23,6 +23,7 @@ Route::get('/events/{event}', [PublicEventController::class, 'show']);
 Route::get('/opportunities', [PublicOpportunityController::class, 'index']);
 Route::get('/opportunities/{opportunity}', [PublicOpportunityController::class, 'show']);
 Route::get('/posts', [PublicPostController::class, 'index']);
+Route::get('/posts/{post:slug}', [PublicPostController::class, 'show']);
 Route::get('/activities', [AdminActivityController::class, 'index']);
 Route::get('/gallery', [GalleryController::class, 'index']);
 Route::get('/gallery-categories', [GalleryCategoryController::class, 'index']);

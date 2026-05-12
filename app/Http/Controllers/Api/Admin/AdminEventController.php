@@ -51,18 +51,18 @@ class AdminEventController extends Controller
                             $index,
                             'image'
                         ),
-                        'vedio' => $this->storeGalleryUpload(
-                            $item['vedio'] ?? null,
+                        'video' => $this->storeGalleryUpload(
+                            $item['video'] ?? null,
                             'video',
                             'event_videos',
                             $storedPaths,
                             $index,
-                            'vedio'
+                            'video'
                         ),
                         'link' => $item['link'] ?? null,
                     ];
 
-                    if (!empty($galleryEntry['image']) || !empty($galleryEntry['vedio']) || !empty($galleryEntry['link'])) {
+                    if (!empty($galleryEntry['image']) || !empty($galleryEntry['video']) || !empty($galleryEntry['link'])) {
                         $galleryPayload[] = $galleryEntry;
                     }
                 }
@@ -159,16 +159,16 @@ class AdminEventController extends Controller
                         $item['existing_image'] ?? null,
                         'event_images'
                     ),
-                    'vedio' => $this->resolveStoredMediaPath(
-                        $item['vedio'] ?? null,
-                        $item['existing_vedio'] ?? null,
+                    'video' => $this->resolveStoredMediaPath(
+                        $item['video'] ?? null,
+                        $item['existing_video'] ?? null,
                         'event_videos'
                     ),
                     'link' => $item['link'] ?? null,
                 ];
             })
             ->filter(function ($item) {
-                return !empty($item['image']) || !empty($item['vedio']) || !empty($item['link']);
+                return !empty($item['image']) || !empty($item['video']) || !empty($item['link']);
             })
             ->values()
             ->all();
@@ -240,10 +240,10 @@ class AdminEventController extends Controller
         return collect($galleryItems)
             ->flatMap(function ($item) {
                 if ($item instanceof \App\Models\EventGalerie) {
-                    return array_filter([$item->image, $item->vedio]);
+                    return array_filter([$item->image, $item->video]);
                 }
 
-                return array_filter([$item['image'] ?? null, $item['vedio'] ?? null]);
+                return array_filter([$item['image'] ?? null, $item['video'] ?? null]);
             })
             ->filter()
             ->unique()
