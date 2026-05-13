@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Throwable;
 
 class AdminActivityController extends Controller
@@ -24,11 +25,17 @@ class AdminActivityController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'title' => ['required', 'string', 'max:255'],
                 'link' => ['required', 'url', 'max:2048'],
                 'image' => ['nullable', 'image', 'max:2048'],
             ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator);
+            }
+
+            $validated = $validator->validated();
 
             if ($request->hasFile('image')) {
                 $validated['image'] = $request->file('image')->store('activities', 'public');
@@ -37,7 +44,8 @@ class AdminActivityController extends Controller
             $activity = Activity::query()->create($validated);
 
             return response()->json([
-                'message' => 'Activity created successfully.',
+                'success' => true,
+                'message_key' => 'api.success_operation',
                 'data' => $activity,
             ], 201);
         } catch (Throwable $e) {
@@ -52,7 +60,8 @@ class AdminActivityController extends Controller
             ]);
 
             return response()->json([
-                'message' => config('app.debug') ? $e->getMessage() : 'Server Error',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
             ], 500);
         }
     }
@@ -60,11 +69,17 @@ class AdminActivityController extends Controller
     public function update(Request $request, Activity $activity): JsonResponse
     {
         try {
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'title' => ['sometimes', 'required', 'string', 'max:255'],
                 'link' => ['sometimes', 'required', 'url', 'max:2048'],
                 'image' => ['nullable', 'image', 'max:2048'],
             ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator);
+            }
+
+            $validated = $validator->validated();
 
             if ($request->hasFile('image')) {
                 if (!empty($activity->image)) {
@@ -76,7 +91,8 @@ class AdminActivityController extends Controller
             $activity->update($validated);
 
             return response()->json([
-                'message' => 'Activity updated successfully.',
+                'success' => true,
+                'message_key' => 'api.success_operation',
                 'data' => $activity->fresh(),
             ]);
         } catch (Throwable $e) {
@@ -93,7 +109,8 @@ class AdminActivityController extends Controller
             ]);
 
             return response()->json([
-                'message' => config('app.debug') ? $e->getMessage() : 'Server Error',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
             ], 500);
         }
     }
@@ -108,7 +125,8 @@ class AdminActivityController extends Controller
             $activity->delete();
 
             return response()->json([
-                'message' => 'Activity deleted successfully.',
+                'success' => true,
+                'message_key' => 'api.success_operation',
             ]);
         } catch (Throwable $e) {
             Log::error('Failed to delete activity.', [
@@ -120,8 +138,45 @@ class AdminActivityController extends Controller
             ]);
 
             return response()->json([
-                'message' => config('app.debug') ? $e->getMessage() : 'Server Error',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
             ], 500);
         }
+    }
+
+    private function validationErrorResponse(\Illuminate\Contracts\Validation\Validator $validator): JsonResponse
+    {
+        $firstError = strtolower((string) $validator->errors()->first());
+
+        return response()->json([
+            'success' => false,
+            'error_key' => $this->convertToErrorKey($firstError),
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    private function convertToErrorKey(string $message): string
+    {
+        $msg = strtolower($message);
+
+        if (str_contains($msg, 'required')) {
+            if (str_contains($msg, 'title')) return 'api.error_title_required';
+            if (str_contains($msg, 'link')) return 'api.error_field_required';
+            return 'api.error_field_required';
+        }
+
+        if (str_contains($msg, 'url')) {
+            return 'api.error_field_required';
+        }
+
+        if (str_contains($msg, 'image')) {
+            return 'api.error_image_invalid';
+        }
+
+        if (str_contains($msg, 'max')) {
+            return 'api.error_too_long';
+        }
+
+        return 'api.error_validation_failed';
     }
 }

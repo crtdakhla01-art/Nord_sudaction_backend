@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -40,8 +41,9 @@ class CounterController extends Controller
             ]);
 
             return response()->json([
-                'code' => 502,
-                'message' => 'Unable to reach Counter API.',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
+                'data' => ['code' => 502],
             ], 502);
         } catch (\Throwable $exception) {
             Log::error('Counter API request failed', [
@@ -49,8 +51,9 @@ class CounterController extends Controller
             ]);
 
             return response()->json([
-                'code' => 502,
-                'message' => 'Unable to reach Counter API.',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
+                'data' => ['code' => 502],
             ], 502);
         }
     }

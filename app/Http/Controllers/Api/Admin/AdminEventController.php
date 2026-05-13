@@ -141,7 +141,8 @@ class AdminEventController extends Controller
         }
 
         return response()->json([
-            'message' => 'Event deleted successfully.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
         ]);
     }
 

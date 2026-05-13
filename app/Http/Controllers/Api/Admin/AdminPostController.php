@@ -58,7 +58,11 @@ class AdminPostController extends Controller
             event(new PostPublished($post->id));
         }
 
-        return response()->json($post, 201);
+        return response()->json([
+            'success' => true,
+            'message_key' => 'api.success_operation',
+            'data' => $post,
+        ], 201);
     }
 
     public function show(Post $post): JsonResponse
@@ -99,7 +103,11 @@ class AdminPostController extends Controller
             event(new PostPublished($post->id));
         }
 
-        return response()->json($post->fresh());
+        return response()->json([
+            'success' => true,
+            'message_key' => 'api.success_operation',
+            'data' => $post->fresh(),
+        ]);
     }
 
     public function destroy(Post $post): JsonResponse
@@ -111,7 +119,8 @@ class AdminPostController extends Controller
         $post->delete();
 
         return response()->json([
-            'message' => 'Post deleted successfully.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
         ]);
     }
 

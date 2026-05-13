@@ -30,7 +30,10 @@ class PublicPostController extends Controller
     public function show(Post $post): JsonResponse
     {
         if ($post->status !== 'published') {
-            return response()->json(['error' => 'Post not found'], 404);
+            return response()->json([
+                'success' => false,
+                'error_key' => 'api.error_not_found',
+            ], 404);
         }
 
         return response()->json($post);

@@ -36,7 +36,8 @@ class AdminOpportunityController extends Controller
         }
 
         return response()->json([
-            'message' => 'Opportunity accepted.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $opportunity->fresh()->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']),
         ]);
     }
@@ -46,7 +47,8 @@ class AdminOpportunityController extends Controller
         $opportunity->update(['status' => 'rejected']);
 
         return response()->json([
-            'message' => 'Opportunity rejected.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $opportunity->fresh()->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']),
         ]);
     }

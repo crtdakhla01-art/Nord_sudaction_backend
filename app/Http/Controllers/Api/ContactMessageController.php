@@ -22,7 +22,8 @@ class ContactMessageController extends Controller
         event(new ContactMessageCreated($contactMessage->id));
 
         return response()->json([
-            'message' => 'Message sent successfully.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $contactMessage,
         ], 201);
     }

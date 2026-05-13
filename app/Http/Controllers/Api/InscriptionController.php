@@ -22,7 +22,8 @@ class InscriptionController extends Controller
         event(new InscriptionSubmitted($inscription->id));
 
         return response()->json([
-            'message' => 'Inscription enregistrée avec succès.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $inscription,
         ], 201);
     }

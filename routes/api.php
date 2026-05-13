@@ -41,9 +41,6 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 });
 
-// CSRF cookie endpoint for Sanctum stateful SPA auth.
-Route::get('/csrf-cookie', fn() => response()->json(['message' => 'CSRF cookie set.']));
-
 Route::prefix('admin')->group(function () {
     // Public read — activities list used by the frontend without auth.
     Route::get('/activities', [AdminActivityController::class, 'index']);
@@ -54,7 +51,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     });
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['extract.jwt', 'auth:jwt'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 

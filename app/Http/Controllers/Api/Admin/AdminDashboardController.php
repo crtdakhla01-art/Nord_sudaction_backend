@@ -87,7 +87,8 @@ class AdminDashboardController extends Controller
             ];
 
             return response()->json([
-                'message' => 'Dashboard status fetched successfully.',
+                'success' => true,
+                'message_key' => 'api.success_operation',
                 'data' => $data,
             ]);
         } catch (Throwable $exception) {
@@ -100,7 +101,8 @@ class AdminDashboardController extends Controller
             }
 
             return response()->json([
-                'message' => 'Dashboard status fetched with partial data.',
+                'success' => true,
+                'message_key' => 'api.success_operation',
                 'data' => [
                     'generated_at' => now()->toIso8601String(),
                     'users' => ['total' => 0, 'admins' => 0, 'managers' => 0],

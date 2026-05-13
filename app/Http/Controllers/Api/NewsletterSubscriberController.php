@@ -19,9 +19,10 @@ class NewsletterSubscriberController extends Controller
             // MySQL/MariaDB duplicate key error code.
             if ((string) $exception->getCode() === '23000') {
                 return response()->json([
-                    'message' => 'This email is already subscribed.',
+                    'success' => false,
+                    'error_key' => 'api.error_already_exists',
                     'errors' => [
-                        'email' => ['This email is already subscribed.'],
+                        'email' => ['api.error_already_exists'],
                     ],
                 ], 422);
             }
@@ -31,12 +32,14 @@ class NewsletterSubscriberController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Newsletter service temporarily unavailable.',
+                'success' => false,
+                'error_key' => 'api.error_server_error',
             ], 503);
         }
 
         return response()->json([
-            'message' => 'Subscription completed successfully.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $subscriber,
         ], 201);
     }

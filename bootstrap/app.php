@@ -12,10 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->statefulApi();
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'extract.jwt' => \App\Http\Middleware\ExtractJwtFromCookie::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -29,9 +29,13 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], $e->status);
                 }
 
-                $status = method_exists($e, 'getStatusCode')
-                    ? $e->getStatusCode()
-                    : (method_exists($e, 'status') ? $e->status() : 500);
+                $status = match (true) {
+                    $e instanceof \Illuminate\Auth\AuthenticationException => 401,
+                    $e instanceof \Illuminate\Auth\Access\AuthorizationException => 403,
+                    $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface => $e->getStatusCode(),
+                    method_exists($e, 'status') => $e->status(),
+                    default => 500,
+                };
 
                 $message = match ($status) {
                     401 => 'Unauthenticated.',

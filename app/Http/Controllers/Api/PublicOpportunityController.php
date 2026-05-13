@@ -26,7 +26,10 @@ class PublicOpportunityController extends Controller
     public function show(Opportunity $opportunity): JsonResponse
     {
         if ($opportunity->status !== 'accepted') {
-            return response()->json(['message' => 'Not found.'], 404);
+            return response()->json([
+                'success' => false,
+                'error_key' => 'api.error_not_found',
+            ], 404);
         }
 
         $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
@@ -91,7 +94,8 @@ class PublicOpportunityController extends Controller
         event(new OpportunitySubmitted($opportunity->id));
 
         return response()->json([
-            'message' => 'Opportunity submitted successfully and is pending review.',
+            'success' => true,
+            'message_key' => 'api.success_operation',
             'data' => $opportunity,
         ], 201);
     }
