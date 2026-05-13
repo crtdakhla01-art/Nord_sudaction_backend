@@ -20,9 +20,9 @@ class NewsletterSubscriberController extends Controller
             if ((string) $exception->getCode() === '23000') {
                 return response()->json([
                     'success' => false,
-                    'error_key' => 'api.error_already_exists',
+                    'error_key' => 'validation.email_taken',
                     'errors' => [
-                        'email' => ['api.error_already_exists'],
+                        'email' => ['validation.email_taken'],
                     ],
                 ], 422);
             }

@@ -6,6 +6,8 @@ use App\Events\OtpCodeGenerated;
 use App\Http\Controllers\Controller;
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Support\ValidationErrorKeys;
+use App\Support\ValidationPatterns;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +29,9 @@ class AuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
+        $normalizedEmail = ValidationPatterns::normalizeEmail($request->input('email'));
+        $request->merge(['email' => $normalizedEmail]);
+
         $this->debugLog('[AUTH] Login request received', [
             'path' => $request->path(),
             'ip' => $request->ip(),
@@ -34,7 +39,7 @@ class AuthController extends Controller
         ]);
 
         $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email'],
+            'email' => ValidationPatterns::emailRules(true),
             'password' => ['required', 'string'],
         ]);
 
@@ -425,40 +430,13 @@ class AuthController extends Controller
 
     private function validationErrorResponse(\Illuminate\Contracts\Validation\Validator $validator): JsonResponse
     {
-        $firstError = strtolower((string) $validator->errors()->first());
+        $mappedErrors = ValidationErrorKeys::fromFailedRules($validator->failed());
 
         return response()->json([
             'success' => false,
-            'error_key' => $this->convertToErrorKey($firstError),
-            'errors' => $validator->errors(),
+            'error_key' => ValidationErrorKeys::firstErrorKey($mappedErrors),
+            'errors' => $mappedErrors,
         ], 422);
-    }
-
-    private function convertToErrorKey(string $message): string
-    {
-        $msg = strtolower($message);
-
-        if (str_contains($msg, 'required')) {
-            if (str_contains($msg, 'email')) return 'api.error_email_required';
-            if (str_contains($msg, 'password')) return 'api.error_password_required';
-            if (str_contains($msg, 'challenge_id')) return 'api.error_challenge_id_invalid';
-            if (str_contains($msg, 'code')) return 'api.error_code_invalid';
-            return 'api.error_field_required';
-        }
-
-        if (str_contains($msg, 'email')) {
-            return 'api.error_email_invalid';
-        }
-
-        if (str_contains($msg, 'digits') || str_contains($msg, 'code')) {
-            return 'api.error_code_invalid';
-        }
-
-        if (str_contains($msg, 'max') && str_contains($msg, 'challenge_id')) {
-            return 'api.error_challenge_id_invalid';
-        }
-
-        return 'api.error_validation_failed';
     }
 
     private function debugLog(string $message, array $context = []): void

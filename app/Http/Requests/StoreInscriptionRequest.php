@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ValidationPatterns;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,8 +28,8 @@ class StoreInscriptionRequest extends FormRequest
             'full_name' => ['required', 'string', 'max:200'],
             'birth_date' => ['required', 'date', 'before_or_equal:today'],
             'city' => ['required', 'string', 'max:120'],
-            'phone' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'email:rfc,dns', 'max:255'],
+            'phone' => ValidationPatterns::phoneRules(true),
+            'email' => ValidationPatterns::emailRules(true),
             'profession' => ['required', 'string', 'max:150'],
             'organization' => ['required', 'string', 'max:200'],
 
@@ -75,8 +76,15 @@ class StoreInscriptionRequest extends FormRequest
                 'observation_astronomique',
             ])],
 
-            'is_information_confirmed' => ['required', 'accepted'],
             'is_terms_accepted' => ['required', 'accepted'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => ValidationPatterns::normalizeEmail($this->input('email')),
+            'phone' => ValidationPatterns::normalizePhone($this->input('phone')),
+        ]);
     }
 }

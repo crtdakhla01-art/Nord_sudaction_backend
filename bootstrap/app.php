@@ -22,10 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    $mappedErrors = \App\Support\ValidationErrorKeys::fromValidationException($e);
                     return response()->json([
-                        'exception' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'errors' => $e->errors(),
+                        'success' => false,
+                        'error_key' => \App\Support\ValidationErrorKeys::firstErrorKey($mappedErrors),
+                        'errors' => $mappedErrors,
                     ], $e->status);
                 }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ValidationPatterns;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,20 +25,15 @@ class StoreNewsletterSubscriberRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:newsletter_subscribers,email'],
+            'email' => [...ValidationPatterns::emailRules(true), 'unique:newsletter_subscribers,email'],
             'consent' => ['accepted'],
         ];
     }
 
-    /**
-     * Get custom error messages for validator rules.
-     *
-     * @return array<string, string>
-     */
-    public function messages(): array
+    protected function prepareForValidation(): void
     {
-        return [
-            'email.unique' => 'Email is already used.',
-        ];
+        $this->merge([
+            'email' => ValidationPatterns::normalizeEmail($this->input('email')),
+        ]);
     }
 }

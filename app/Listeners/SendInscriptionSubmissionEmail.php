@@ -38,7 +38,6 @@ class SendInscriptionSubmissionEmail
                 . "Autre secteur: " . ($inscription->investment_sector_other ?: '-') . "\n"
                 . "Activites confirmees: " . ($confirmedActivities->isNotEmpty() ? $confirmedActivities->implode(', ') : '-') . "\n"
                 . "Frais participation: " . number_format((float) $inscription->participation_fee, 2, ',', ' ') . " MAD\n"
-                . "Informations confirmees: " . ($inscription->is_information_confirmed ? 'oui' : 'non') . "\n"
                 . "Conditions acceptees: " . ($inscription->is_terms_accepted ? 'oui' : 'non') . "\n"
                 . "Paiement effectue: " . ($inscription->is_paid ? 'oui' : 'non') . "\n"
                 . "Date de paiement: " . ($inscription->paid_at?->format('Y-m-d H:i:s') ?? '-');
