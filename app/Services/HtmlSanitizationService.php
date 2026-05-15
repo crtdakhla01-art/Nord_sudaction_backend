@@ -14,10 +14,10 @@ class HtmlSanitizationService
         $config = HTMLPurifier_Config::createDefault();
 
         // Only allow safe HTML tags for rich text content.
-        $config->set('HTML.Allowed', 'p,br,strong,em,u,ul,ol,li,h1,h2,h3,h4,h5,h6,blockquote,a,div,span');
+        $config->set('HTML.Allowed', 'p,br,strong,em,u,ul,ol,li,h1,h2,h3,h4,h5,h6,blockquote,a,div,span,img');
 
-        // Allow safe attributes.
-        $config->set('HTML.AllowedAttributes', 'href,title,class,id,target,rel');
+        // Allow safe attributes (include img.src to satisfy required attributes for img).
+        $config->set('HTML.AllowedAttributes', 'href,title,class,id,target,rel,src,alt,width,height');
 
         // Disable javascript: protocol and data: scheme entirely.
         $config->set('URI.AllowedSchemes', ['http' => true, 'https' => true, 'mailto' => true]);
@@ -27,9 +27,6 @@ class HtmlSanitizationService
 
         // Prevent javascript: execution via event handlers.
         $config->set('Attr.AllowedFrameTargets', ['_blank', '_self', '_parent', '_top']);
-
-        // Remove potentially dangerous attributes like onclick, onerror, etc.
-        $config->set('HTML.RemoveEmpty', true);
 
         $this->purifier = new HTMLPurifier($config);
     }

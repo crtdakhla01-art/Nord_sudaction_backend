@@ -7,6 +7,7 @@ use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,10 +19,16 @@ class AdminEventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $perPage = min(max((int) $request->query('per_page', 25), 1), 100);
+
         return response()->json(
-            Event::query()->with('gallery')->latest('date')->get()
+            Event::query()
+                ->with('gallery')
+                ->latest('date')
+                ->paginate($perPage)
+                ->withQueryString()
         );
     }
 
@@ -101,23 +108,35 @@ class AdminEventController extends Controller
 
         $data = $request->validated();
         $hasGalleryField = array_key_exists('gallery', $data);
-        $gallery = $this->normalizeGalleryPayload($data['gallery'] ?? []);
-        $obsoletePaths = $hasGalleryField
-            ? $this->extractGalleryPaths($event->gallery->all())->diff($this->extractGalleryPaths($gallery))->values()->all()
-            : [];
+        $galleryInput = $data['gallery'] ?? [];
         unset($data['gallery']);
+        $newlyUploadedPaths = [];
 
-        DB::transaction(function () use ($event, $data, $hasGalleryField, $gallery) {
-            $event->update($data);
+        try {
+            $gallery = $this->normalizeGalleryPayload($galleryInput, $newlyUploadedPaths);
 
-            if ($hasGalleryField) {
-                $event->gallery()->delete();
+            $obsoletePaths = $hasGalleryField
+                ? $this->extractGalleryPaths($event->gallery->all())->diff($this->extractGalleryPaths($gallery))->values()->all()
+                : [];
 
-                if (!empty($gallery)) {
-                    $event->gallery()->createMany($gallery);
+            DB::transaction(function () use ($event, $data, $hasGalleryField, $gallery) {
+                $event->update($data);
+
+                if ($hasGalleryField) {
+                    $event->gallery()->delete();
+
+                    if (!empty($gallery)) {
+                        $event->gallery()->createMany($gallery);
+                    }
                 }
+            });
+        } catch (Throwable $exception) {
+            if (!empty($newlyUploadedPaths)) {
+                Storage::disk('public')->delete($newlyUploadedPaths);
             }
-        });
+
+            throw $exception;
+        }
 
         if (!empty($obsoletePaths)) {
             Storage::disk('public')->delete($obsoletePaths);
@@ -150,20 +169,22 @@ class AdminEventController extends Controller
      * @param  array<int, mixed>  $items
      * @return array<int, array<string, string|null>>
      */
-    private function normalizeGalleryPayload(array $items): array
+    private function normalizeGalleryPayload(array $items, array &$storedPaths = []): array
     {
         return collect($items)
-            ->map(function ($item) {
+            ->map(function ($item) use (&$storedPaths) {
                 return [
                     'image' => $this->resolveStoredMediaPath(
                         $item['image'] ?? null,
                         $item['existing_image'] ?? null,
-                        'event_images'
+                        'event_images',
+                        $storedPaths
                     ),
                     'video' => $this->resolveStoredMediaPath(
                         $item['video'] ?? null,
                         $item['existing_video'] ?? null,
-                        'event_videos'
+                        'event_videos',
+                        $storedPaths
                     ),
                     'link' => $item['link'] ?? null,
                 ];
@@ -175,10 +196,13 @@ class AdminEventController extends Controller
             ->all();
     }
 
-    private function resolveStoredMediaPath(mixed $file, mixed $existingPath, string $directory): ?string
+    private function resolveStoredMediaPath(mixed $file, mixed $existingPath, string $directory, array &$storedPaths = []): ?string
     {
         if ($file instanceof UploadedFile) {
-            return $file->store($directory, 'public');
+            $path = $file->store($directory, 'public');
+            $storedPaths[] = $path;
+
+            return $path;
         }
 
         if (is_string($existingPath) && $existingPath !== '') {
@@ -218,7 +242,7 @@ class AdminEventController extends Controller
 
         $isValid = match ($expectedType) {
             'image' => str_starts_with($mimeType, 'image/')
-                || in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'svg', 'tiff', 'tif', 'ico', 'avif', 'heic', 'heif'], true),
+                || in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'tiff', 'tif', 'ico', 'avif', 'heic', 'heif'], true),
             'video' => str_starts_with($mimeType, 'video/') && in_array($extension, ['mp4', 'webm', 'ogg', 'mov'], true),
             default => false,
         };

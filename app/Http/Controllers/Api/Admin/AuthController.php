@@ -19,11 +19,23 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    private const OTP_TTL_MINUTES = 5;
+    private const OTP_TTL_MINUTES = 3;
 
     private const OTP_MAX_ATTEMPTS = 5;
 
-    private const OTP_REUSE_WINDOW_SECONDS = 30;
+    private const OTP_REUSE_WINDOW_SECONDS = 5;
+
+    private const LOGIN_FAIL_THRESHOLD = 10;
+
+    private const LOGIN_LOCKOUT_MINUTES = 15;
+
+    private const OTP_ACCOUNT_FAIL_THRESHOLD = 12;
+
+    private const OTP_ACCOUNT_LOCKOUT_MINUTES = 15;
+
+    private const OTP_IP_FAIL_THRESHOLD = 20;
+
+    private const OTP_IP_LOCKOUT_MINUTES = 10;
 
     private const JWT_COOKIE_TTL_MINUTES = 43200;
 
@@ -31,6 +43,16 @@ class AuthController extends Controller
     {
         $normalizedEmail = ValidationPatterns::normalizeEmail($request->input('email'));
         $request->merge(['email' => $normalizedEmail]);
+
+        $emailForRateLimit = (string) $request->input('email', '');
+        if ($this->isLoginLocked($request->ip(), $emailForRateLimit)) {
+            Log::warning('[AUTH] Login lockout active', [
+                'ip' => $request->ip(),
+                'email_masked' => $this->maskEmail($emailForRateLimit),
+            ]);
+
+            return $this->errorResponse('api.error_invalid_credentials', 429);
+        }
 
         $this->debugLog('[AUTH] Login request received', [
             'path' => $request->path(),
@@ -55,6 +77,8 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            $this->registerLoginFailure($request->ip(), $credentials['email']);
+
             Log::info('[AUTH] Login failed: invalid credentials', [
                 'email_masked' => $this->maskEmail($credentials['email']),
                 'ip' => $request->ip(),
@@ -62,6 +86,8 @@ class AuthController extends Controller
 
             return $this->errorResponse('api.error_invalid_credentials', 401);
         }
+
+        $this->clearLoginFailures($request->ip(), $credentials['email']);
 
         $this->debugLog('[AUTH] Credentials validated; OTP challenge required', [
             'user_id' => $user->id,
@@ -171,17 +197,43 @@ class AuthController extends Controller
 
         $data = $validator->validated();
 
+        if ($this->isOtpIpLocked($request->ip())) {
+            Log::warning('OTP verify blocked: IP lockout active', [
+                'ip' => $request->ip(),
+                'challenge_id' => $data['challenge_id'],
+            ]);
+
+            return $this->errorResponse('api.error_otp_max_attempts', 429);
+        }
+
         $challengeKey = $this->otpChallengeKey($data['challenge_id']);
         $challenge = Cache::get($challengeKey);
 
         if (! is_array($challenge)
             || ! isset($challenge['user_id'], $challenge['expires_at'], $challenge['attempts'])) {
+            $this->registerOtpIpFailure($request->ip());
+
             Log::info('OTP verify failed: challenge missing', [
                 'challenge_id' => $data['challenge_id'],
                 'ip' => $request->ip(),
             ]);
 
             return $this->errorResponse('api.error_otp_invalid', 401);
+        }
+
+        $challengeUserId = (int) $challenge['user_id'];
+        if ($this->isOtpAccountLocked($challengeUserId)) {
+            Cache::forget($challengeKey);
+            Cache::forget($this->otpUserChallengeKey($challengeUserId));
+            OtpCode::query()->where('user_id', $challengeUserId)->delete();
+
+            Log::warning('OTP verify blocked: account lockout active', [
+                'challenge_id' => $data['challenge_id'],
+                'user_id' => $challengeUserId,
+                'ip' => $request->ip(),
+            ]);
+
+            return $this->errorResponse('api.error_otp_max_attempts', 429);
         }
 
         if (now()->timestamp >= (int) $challenge['expires_at']) {
@@ -194,7 +246,7 @@ class AuthController extends Controller
                 'ip' => $request->ip(),
             ]);
 
-            return $this->errorResponse('api.error_otp_expired', 401);
+            return $this->errorResponse('api.error_otp_invalid', 401);
         }
 
         $attempts = (int) $challenge['attempts'];
@@ -240,11 +292,14 @@ class AuthController extends Controller
             $challenge['attempts'] = $attempts;
             Cache::put($challengeKey, $challenge, now()->addSeconds(max(1, ((int) $challenge['expires_at']) - now()->timestamp)));
 
+            $this->registerOtpIpFailure($request->ip());
+            $accountLocked = $this->registerOtpAccountFailure($user->id, $request->ip());
+
             if ($otp && now()->greaterThan($otp->expires_at)) {
                 $otp->delete();
             }
 
-            if ($attempts >= self::OTP_MAX_ATTEMPTS) {
+            if ($attempts >= self::OTP_MAX_ATTEMPTS || $accountLocked || $this->isOtpIpLocked($request->ip())) {
                 Cache::forget($challengeKey);
                 Cache::forget($this->otpUserChallengeKey($user->id));
                 OtpCode::query()->where('user_id', $user->id)->delete();
@@ -271,6 +326,7 @@ class AuthController extends Controller
         $otp->delete();
         Cache::forget($challengeKey);
         Cache::forget($this->otpUserChallengeKey($user->id));
+        $this->clearOtpFailures($request->ip(), $user->id);
 
         $token = Auth::guard('jwt')->login($user);
 
@@ -441,14 +497,108 @@ class AuthController extends Controller
 
     private function debugLog(string $message, array $context = []): void
     {
-        $enabled = app()->environment(['local', 'development'])
-            || config('app.debug')
-            || (bool) env('AUTH_DEBUG', false);
+        return;
+    }
 
-        if (! $enabled) {
-            return;
+    private function loginIpFailKey(string $ip): string
+    {
+        return 'auth:login:ip:fail:'.$ip;
+    }
+
+    private function loginEmailFailKey(string $email): string
+    {
+        return 'auth:login:email:fail:'.sha1($email);
+    }
+
+    private function isLoginLocked(string $ip, string $email): bool
+    {
+        $ipFails = (int) Cache::get($this->loginIpFailKey($ip), 0);
+        $emailFails = (int) Cache::get($this->loginEmailFailKey($email), 0);
+
+        return $ipFails >= self::LOGIN_FAIL_THRESHOLD || $emailFails >= self::LOGIN_FAIL_THRESHOLD;
+    }
+
+    private function registerLoginFailure(string $ip, string $email): void
+    {
+        $ttl = now()->addMinutes(self::LOGIN_LOCKOUT_MINUTES);
+
+        $ipKey = $this->loginIpFailKey($ip);
+        $emailKey = $this->loginEmailFailKey($email);
+
+        $ipFails = (int) Cache::get($ipKey, 0) + 1;
+        $emailFails = (int) Cache::get($emailKey, 0) + 1;
+
+        Cache::put($ipKey, $ipFails, $ttl);
+        Cache::put($emailKey, $emailFails, $ttl);
+
+        if ($ipFails >= self::LOGIN_FAIL_THRESHOLD || $emailFails >= self::LOGIN_FAIL_THRESHOLD) {
+            Log::warning('Suspicious login activity detected', [
+                'ip' => $ip,
+                'email_masked' => $this->maskEmail($email),
+                'ip_fails' => $ipFails,
+                'email_fails' => $emailFails,
+                'lockout_minutes' => self::LOGIN_LOCKOUT_MINUTES,
+            ]);
+        }
+    }
+
+    private function clearLoginFailures(string $ip, string $email): void
+    {
+        Cache::forget($this->loginIpFailKey($ip));
+        Cache::forget($this->loginEmailFailKey($email));
+    }
+
+    private function otpIpFailKey(string $ip): string
+    {
+        return 'auth:otp:verify:ip:fail:'.$ip;
+    }
+
+    private function otpUserFailKey(int $userId): string
+    {
+        return 'auth:otp:verify:user:fail:'.$userId;
+    }
+
+    private function isOtpIpLocked(string $ip): bool
+    {
+        return (int) Cache::get($this->otpIpFailKey($ip), 0) >= self::OTP_IP_FAIL_THRESHOLD;
+    }
+
+    private function isOtpAccountLocked(int $userId): bool
+    {
+        return (int) Cache::get($this->otpUserFailKey($userId), 0) >= self::OTP_ACCOUNT_FAIL_THRESHOLD;
+    }
+
+    private function registerOtpIpFailure(string $ip): void
+    {
+        $key = $this->otpIpFailKey($ip);
+        $fails = (int) Cache::get($key, 0) + 1;
+
+        Cache::put($key, $fails, now()->addMinutes(self::OTP_IP_LOCKOUT_MINUTES));
+    }
+
+    private function registerOtpAccountFailure(int $userId, string $ip): bool
+    {
+        $key = $this->otpUserFailKey($userId);
+        $fails = (int) Cache::get($key, 0) + 1;
+        Cache::put($key, $fails, now()->addMinutes(self::OTP_ACCOUNT_LOCKOUT_MINUTES));
+
+        if ($fails >= self::OTP_ACCOUNT_FAIL_THRESHOLD) {
+            Log::warning('Suspicious OTP activity detected', [
+                'user_id' => $userId,
+                'ip' => $ip,
+                'fails' => $fails,
+                'lockout_minutes' => self::OTP_ACCOUNT_LOCKOUT_MINUTES,
+            ]);
+
+            return true;
         }
 
-        Log::debug($message, $context);
+        return false;
+    }
+
+    private function clearOtpFailures(string $ip, int $userId): void
+    {
+        Cache::forget($this->otpIpFailKey($ip));
+        Cache::forget($this->otpUserFailKey($userId));
     }
 }

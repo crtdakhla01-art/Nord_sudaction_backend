@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class ExtractJwtFromCookie
@@ -18,7 +17,6 @@ class ExtractJwtFromCookie
             'path' => $request->path(),
             'has_token_cookie' => is_string($token) && $token !== '',
             'has_authorization_header' => $hasAuthHeader,
-            'token_masked' => is_string($token) && $token !== '' ? $this->maskToken($token) : null,
         ]);
 
         if (is_string($token) && $token !== '' && ! $hasAuthHeader) {
@@ -34,23 +32,7 @@ class ExtractJwtFromCookie
 
     private function debugLog(string $message, array $context = []): void
     {
-        $enabled = app()->environment(['local', 'development'])
-            || config('app.debug')
-            || (bool) env('AUTH_DEBUG', false);
-
-        if (! $enabled) {
-            return;
-        }
-
-        Log::debug($message, $context);
+        return;
     }
 
-    private function maskToken(string $token): string
-    {
-        if (strlen($token) < 10) {
-            return '***';
-        }
-
-        return substr($token, 0, 6).'...'.substr($token, -4);
-    }
 }

@@ -55,7 +55,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 
-        Route::middleware('role:'.Role::ADMIN.','.Role::MANAGER)->group(function () {
+        Route::middleware(['role:'.Role::ADMIN.','.Role::MANAGER, 'throttle:90,1'])->group(function () {
             Route::get('/dashboard-status', [AdminDashboardController::class, 'dashboard_status']);
             Route::get('/opportunities', [AdminOpportunityController::class, 'index']);
             Route::get('/opportunities/{opportunity}', [AdminOpportunityController::class, 'show']);
@@ -65,7 +65,9 @@ Route::prefix('admin')->group(function () {
             Route::put('/inscriptions/{inscription}/payment-status', [AdminInscriptionController::class, 'updatePaymentStatus']);
         });
 
-        Route::middleware('role:'.Role::ADMIN)->group(function () {
+        // Content-management endpoints remain admin-only by design (least privilege).
+        // Manager role is intentionally scoped to operational review flows above.
+        Route::middleware(['role:'.Role::ADMIN, 'throttle:60,1'])->group(function () {
             Route::apiResource('/events', AdminEventController::class);
             Route::apiResource('/posts', AdminPostController::class);
             Route::post('/activities', [AdminActivityController::class, 'store']);

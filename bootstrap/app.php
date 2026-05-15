@@ -4,6 +4,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+$appEnv = (string) env('APP_ENV', 'local');
+$jwtSecret = env('JWT_SECRET');
+$isProdLike = in_array($appEnv, ['production', 'staging'], true);
+
+if ($isProdLike && (! is_string($jwtSecret) || trim($jwtSecret) === '')) {
+    throw new RuntimeException('Authentication configuration is invalid.');
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         api: __DIR__.'/../routes/api.php',
@@ -13,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+        // This is a pure API backend — there is no web login route.
+        // Returning null prevents Laravel from trying to redirect to route('login')
+        // and lets the exception handler return a proper 401 JSON response instead.
+        $middleware->redirectGuestsTo(fn () => null);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'extract.jwt' => \App\Http\Middleware\ExtractJwtFromCookie::class,
