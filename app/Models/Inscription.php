@@ -4,10 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Inscription extends Model
 {
     use HasFactory;
+
+    protected $appends = [
+        'payment_proof_url',
+    ];
 
     protected $fillable = [
         'full_name',
@@ -26,6 +31,7 @@ class Inscription extends Model
         'is_terms_accepted',
         'is_paid',
         'paid_at',
+        'payment_proof_path',
     ];
 
     protected function casts(): array
@@ -39,5 +45,14 @@ class Inscription extends Model
             'is_paid' => 'boolean',
             'paid_at' => 'datetime',
         ];
+    }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        if (!$this->payment_proof_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->payment_proof_path);
     }
 }

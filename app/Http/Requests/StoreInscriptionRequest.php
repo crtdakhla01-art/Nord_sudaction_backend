@@ -76,6 +76,8 @@ class StoreInscriptionRequest extends FormRequest
                 'observation_astronomique',
             ])],
 
+            'payment_proof' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+
             'is_terms_accepted' => ['required', 'accepted'],
         ];
     }

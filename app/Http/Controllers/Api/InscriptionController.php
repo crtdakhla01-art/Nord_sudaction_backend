@@ -13,6 +13,10 @@ class InscriptionController extends Controller
     public function store(StoreInscriptionRequest $request): JsonResponse
     {
         $payload = $request->validated();
+        $paymentProofPath = $request->file('payment_proof')?->store('inscriptions/payment-proofs', 'public');
+
+        unset($payload['payment_proof']);
+        $payload['payment_proof_path'] = $paymentProofPath;
         $payload['participation_fee'] = 1500;
         $payload['is_paid'] = false;
         $payload['paid_at'] = null;
