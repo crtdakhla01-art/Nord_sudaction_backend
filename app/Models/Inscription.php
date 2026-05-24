@@ -29,6 +29,7 @@ class Inscription extends Model
         'confirmed_activities',
         'participation_fee',
         'is_terms_accepted',
+        'is_payment_confirmed',
         'is_paid',
         'paid_at',
         'payment_proof_path',
@@ -42,6 +43,7 @@ class Inscription extends Model
             'investment_sectors' => 'array',
             'confirmed_activities' => 'array',
             'is_terms_accepted' => 'boolean',
+            'is_payment_confirmed' => 'boolean',
             'is_paid' => 'boolean',
             'paid_at' => 'datetime',
         ];

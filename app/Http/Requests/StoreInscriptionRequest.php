@@ -78,6 +78,7 @@ class StoreInscriptionRequest extends FormRequest
 
             'payment_proof' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
 
+            'is_payment_confirmed' => ['required', 'accepted'],
             'is_terms_accepted' => ['required', 'accepted'],
         ];
     }
