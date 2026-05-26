@@ -6,6 +6,7 @@ use App\Events\InscriptionSubmitted;
 use App\Models\Inscription;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class SendInscriptionSubmissionEmail
 {
@@ -23,6 +24,12 @@ class SendInscriptionSubmissionEmail
             $participantProfiles = collect($inscription->participant_profiles ?? [])->filter()->values();
             $investmentSectors = collect($inscription->investment_sectors ?? [])->filter()->values();
             $confirmedActivities = collect($inscription->confirmed_activities ?? [])->filter()->values();
+            $paymentProofPublicUrl = $inscription->payment_proof_path
+                ? Storage::disk('public')->url($inscription->payment_proof_path)
+                : null;
+            $cinCopyPublicUrl = $inscription->cin_copy_path
+                ? Storage::disk('public')->url($inscription->cin_copy_path)
+                : null;
 
             $body = "Nouvelle inscription recue\n\n"
                 . "Nom complet: {$inscription->full_name}\n"
@@ -40,12 +47,28 @@ class SendInscriptionSubmissionEmail
                 . "Frais participation: " . number_format((float) $inscription->participation_fee, 2, ',', ' ') . " MAD\n"
                 . "Conditions acceptees: " . ($inscription->is_terms_accepted ? 'oui' : 'non') . "\n"
                 . "Paiement effectue: " . ($inscription->is_paid ? 'oui' : 'non') . "\n"
-                . "Date de paiement: " . ($inscription->paid_at?->format('Y-m-d H:i:s') ?? '-');
+                . "Date de paiement: " . ($inscription->paid_at?->format('Y-m-d H:i:s') ?? '-') . "\n"
+                . "Justificatif paiement (URL): " . ($paymentProofPublicUrl ?: '-') . "\n"
+                . "Copie CIN (URL): " . ($cinCopyPublicUrl ?: '-');
 
             Mail::raw($body, function ($message) use ($inscription, $recipient): void {
                 $message->to($recipient)
                     ->replyTo($inscription->email, $inscription->full_name)
                     ->subject("Nouvelle inscription soumise : {$inscription->full_name}");
+
+                if ($inscription->payment_proof_path && Storage::disk('public')->exists($inscription->payment_proof_path)) {
+                    $message->attach(
+                        Storage::disk('public')->path($inscription->payment_proof_path),
+                        ['as' => basename($inscription->payment_proof_path)]
+                    );
+                }
+
+                if ($inscription->cin_copy_path && Storage::disk('public')->exists($inscription->cin_copy_path)) {
+                    $message->attach(
+                        Storage::disk('public')->path($inscription->cin_copy_path),
+                        ['as' => basename($inscription->cin_copy_path)]
+                    );
+                }
             });
         } catch (\Throwable $exception) {
             Log::warning('Inscription notification mail failed', [

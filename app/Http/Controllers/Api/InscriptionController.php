@@ -14,9 +14,11 @@ class InscriptionController extends Controller
     {
         $payload = $request->validated();
         $paymentProofPath = $request->file('payment_proof')?->store('inscriptions/payment-proofs', 'public');
+        $cinCopyPath = $request->file('cin_copy')?->store('inscriptions/cin-copies', 'public');
 
-        unset($payload['payment_proof']);
+        unset($payload['payment_proof'], $payload['cin_copy']);
         $payload['payment_proof_path'] = $paymentProofPath;
+        $payload['cin_copy_path'] = $cinCopyPath;
         $payload['participation_fee'] = 1500;
         $payload['is_paid'] = false;
         $payload['paid_at'] = null;

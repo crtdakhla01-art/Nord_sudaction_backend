@@ -12,6 +12,7 @@ class Inscription extends Model
 
     protected $appends = [
         'payment_proof_url',
+        'cin_copy_url',
     ];
 
     protected $fillable = [
@@ -33,6 +34,7 @@ class Inscription extends Model
         'is_paid',
         'paid_at',
         'payment_proof_path',
+        'cin_copy_path',
     ];
 
     protected function casts(): array
@@ -56,5 +58,14 @@ class Inscription extends Model
         }
 
         return Storage::disk('public')->url($this->payment_proof_path);
+    }
+
+    public function getCinCopyUrlAttribute(): ?string
+    {
+        if (! $this->cin_copy_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->cin_copy_path);
     }
 }
