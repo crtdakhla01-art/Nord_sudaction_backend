@@ -84,6 +84,17 @@ class StoreInscriptionRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'payment_proof.max' => 'api.error_file_too_large',
+            'cin_copy.max' => 'api.error_file_too_large',
+            'payment_proof.mimes' => 'api.error_invalid_file_type',
+            'cin_copy.mimes' => 'api.error_invalid_file_type',
+            'cin_copy.image' => 'api.error_image_invalid',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $this->merge([

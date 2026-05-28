@@ -28,19 +28,19 @@ class SendOpportunitySubmissionEmail
                 ->map(fn ($image) => Storage::disk('public')->url($image->path))
                 ->values();
 
-            $body = "Nouvelle opportunite soumise\n\n"
-                . "Titre: {$opportunity->titre}\n"
-                . "Nom: {$opportunity->first_name} {$opportunity->last_name}\n"
-                . "Email: {$opportunity->email}\n"
-                . "Telephone: {$opportunity->phone}\n"
-                . "Ville: {$opportunity->ville}\n"
-                . "Type: " . ($opportunity->type?->name ?? '-') . "\n"
-                . "Budget: " . ($opportunity->budget ? number_format($opportunity->budget, 2, ',', ' ') . ' MAD' : '-') . "\n"
-                . "Nombre d'images: {$imageLinks->count()}\n\n"
+            $body = "Nouvelle opportunité soumise\n\n"
+                . "Titre : {$opportunity->titre}\n"
+                . "Nom : {$opportunity->first_name} {$opportunity->last_name}\n"
+                . "E-mail : {$opportunity->email}\n"
+                . "Téléphone : {$opportunity->phone}\n"
+                . "Ville : {$opportunity->ville}\n"
+                . "Type : " . ($opportunity->type?->name ?? '-') . "\n"
+                . "Budget : " . ($opportunity->budget ? number_format($opportunity->budget, 2, ',', ' ') . ' MAD' : '-') . "\n"
+                . "Nombre d'images : {$imageLinks->count()}\n\n"
                 . "Description:\n{$opportunity->description}";
 
             if ($imageLinks->isNotEmpty()) {
-                $body .= "\n\nLiens des images:\n- " . $imageLinks->implode("\n- ");
+                $body .= "\n\nLiens des images :\n- " . $imageLinks->implode("\n- ");
             }
 
             Mail::raw($body, function ($message) use ($opportunity, $recipient): void {

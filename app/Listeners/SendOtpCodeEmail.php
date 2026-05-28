@@ -32,9 +32,9 @@ class SendOtpCodeEmail
         }
 
         try {
-            Mail::raw("Your verification code is: {$event->plainCode}", function ($message) use ($user): void {
+                Mail::raw("Votre code de vérification est : {$event->plainCode}", function ($message) use ($user): void {
                 $message->to($user->email)
-                    ->subject('Your OTP Verification Code');
+                    ->subject('Votre code de vérification OTP');
             });
         } catch (\Throwable $exception) {
             Log::warning('OTP mail send failed', [

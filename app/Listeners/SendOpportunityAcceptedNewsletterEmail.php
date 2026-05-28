@@ -26,7 +26,7 @@ class SendOpportunityAcceptedNewsletterEmail
             $summary = 'Une nouvelle opportunité est disponible.';
         }
 
-        $headline = $title !== '' ? "Nouvelle opportunité: {$title}" : 'Nouvelle opportunité disponible';
+        $headline = $title !== '' ? "Nouvelle opportunité : {$title}" : 'Nouvelle opportunité disponible';
         $contentUrl = $this->publicBaseUrl() . '/opportunities/' . $opportunity->id;
 
         NewsletterSubscriber::query()

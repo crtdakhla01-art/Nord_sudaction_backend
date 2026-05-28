@@ -19,7 +19,7 @@ class InscriptionController extends Controller
         unset($payload['payment_proof'], $payload['cin_copy']);
         $payload['payment_proof_path'] = $paymentProofPath;
         $payload['cin_copy_path'] = $cinCopyPath;
-        $payload['participation_fee'] = 1500;
+        $payload['participation_fee'] = 1800;
         $payload['is_paid'] = false;
         $payload['paid_at'] = null;
 

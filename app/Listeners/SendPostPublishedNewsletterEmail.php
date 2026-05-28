@@ -31,7 +31,7 @@ class SendPostPublishedNewsletterEmail
             $summary = 'Une nouvelle actualité a été publiée.';
         }
 
-        $headline = $title !== '' ? "Nouvelle actualité: {$title}" : 'Nouvelle actualité disponible';
+        $headline = $title !== '' ? "Nouvelle actualité : {$title}" : 'Nouvelle actualité disponible';
         $contentUrl = $this->publicBaseUrl() . '/actualites/' . $slug;
 
         NewsletterSubscriber::query()

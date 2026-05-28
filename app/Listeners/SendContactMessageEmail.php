@@ -22,11 +22,11 @@ class SendContactMessageEmail
 
         try {
             Mail::raw(
-                "New contact message\n\nName: {$contactMessage->name}\nEmail: {$contactMessage->email}\nPhone: " . ($contactMessage->phone ?: '-') . "\nObject: {$contactMessage->object}\n\nMessage:\n{$contactMessage->message}",
+                "Nouveau message de contact\n\nNom : {$contactMessage->name}\nE-mail : {$contactMessage->email}\nTéléphone : " . ($contactMessage->phone ?: '-') . "\nObjet : {$contactMessage->object}\n\nMessage :\n{$contactMessage->message}",
                 function ($message) use ($contactMessage, $recipient): void {
                     $message->to($recipient)
                         ->replyTo($contactMessage->email, $contactMessage->name)
-                        ->subject("New contact form submission: {$contactMessage->object}");
+                        ->subject("Nouveau message de contact : {$contactMessage->object}");
                 }
             );
         } catch (\Throwable $exception) {

@@ -45,7 +45,7 @@ class PublicOpportunityController extends Controller
             'investment' => 'Projets d\'investissement',
             'commerce' => 'Fonds de commerce (tourisme, restauration...)',
             'partnership' => 'Partenariats',
-            'calls' => 'Appels a projets',
+            'calls' => 'Appels à projets',
             default => 'Autre',
         };
 
