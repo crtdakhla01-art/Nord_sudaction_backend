@@ -21,6 +21,14 @@
     <p>Ou copiez ce lien :</p>
     <p><a href="{{ $contentUrl }}">{{ $contentUrl }}</a></p>
 
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:20px 0;">
+    <p style="font-size:12px;color:#6b7280;">
+        Vous recevez cet email parce que vous êtes inscrit(e) à la newsletter Nord Sud Action.
+    </p>
+    <p style="font-size:12px;color:#6b7280;">
+        <a href="{{ $unsubscribeUrl }}" target="_blank" rel="noopener noreferrer">Se désabonner</a>
+    </p>
+
     <p>Merci,<br>Nord Sud Action</p>
 </body>
 </html>

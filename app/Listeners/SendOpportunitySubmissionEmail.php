@@ -4,12 +4,16 @@ namespace App\Listeners;
 
 use App\Events\OpportunitySubmitted;
 use App\Models\Opportunity;
+use App\Services\Email\EmailDeliveryService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class SendOpportunitySubmissionEmail
 {
+    public function __construct(
+        private readonly EmailDeliveryService $emailDeliveryService,
+    ) {
+    }
 
     public function handle(OpportunitySubmitted $event): void
     {
@@ -43,16 +47,45 @@ class SendOpportunitySubmissionEmail
                 $body .= "\n\nLiens des images :\n- " . $imageLinks->implode("\n- ");
             }
 
-            Mail::raw($body, function ($message) use ($opportunity, $recipient): void {
-                $message->to($recipient)
-                    ->replyTo($opportunity->email, $opportunity->first_name . ' ' . $opportunity->last_name)
-                    ->subject("Nouvelle opportunité soumise : {$opportunity->titre}");
-            });
+            $result = $this->emailDeliveryService->send([
+                'to_email' => $recipient,
+                'subject' => "Nouvelle opportunité soumise : {$opportunity->titre}",
+                'text_content' => $body,
+                'reply_to_email' => $opportunity->email,
+                'reply_to_name' => trim($opportunity->first_name . ' ' . $opportunity->last_name),
+                'tags' => ['opportunity-submission'],
+            ]);
+
+            if (! $result->success) {
+                Log::warning('Opportunity notification mail failed', [
+                    'opportunity_id' => $event->opportunityId,
+                    'recipient' => $recipient,
+                    'status' => $result->status,
+                    'message_id' => $result->messageId,
+                    'response_status' => $result->errorPayload['status'] ?? null,
+                    'error' => $result->normalizedErrorText(),
+                    'error_payload' => $result->errorPayload,
+                ]);
+
+                return;
+            }
+
+            Log::info('Opportunity notification mail delivery succeeded', [
+                'opportunity_id' => $event->opportunityId,
+                'recipient' => $recipient,
+                'status' => $result->status,
+                'message_id' => $result->messageId,
+                'brevo_message_id' => $result->messageId,
+            ]);
         } catch (\Throwable $exception) {
             Log::warning('Opportunity notification mail failed', [
                 'opportunity_id' => $event->opportunityId,
                 'recipient' => $recipient,
+                'status' => 'failed',
+                'message_id' => null,
+                'response_status' => null,
                 'error' => $exception->getMessage(),
+                'error_payload' => [],
             ]);
         }
     }

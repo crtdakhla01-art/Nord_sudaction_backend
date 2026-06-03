@@ -18,10 +18,6 @@ return [
 
     'allowed_origins' => [
         'http://localhost:5173',
-        'https://www.nordsudaction.org',
-        'https://nordsudaction.org',
-        'https://www.nordsudaction.ma',
-        'https://nordsudaction.ma',
     ],
 
     'allowed_origins_patterns' => [],

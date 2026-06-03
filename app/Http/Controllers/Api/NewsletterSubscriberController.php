@@ -14,7 +14,14 @@ class NewsletterSubscriberController extends Controller
     public function store(StoreNewsletterSubscriberRequest $request): JsonResponse
     {
         try {
-            $subscriber = NewsletterSubscriber::query()->create($request->validated());
+            $subscriber = NewsletterSubscriber::query()->create([
+                ...$request->validated(),
+                'unsubscribe_token' => NewsletterSubscriber::generateUnsubscribeToken(),
+                'unsubscribed_at' => null,
+                'is_suppressed' => false,
+                'suppressed_at' => null,
+                'suppression_reason' => null,
+            ]);
         } catch (QueryException $exception) {
             // MySQL/MariaDB duplicate key error code.
             if ((string) $exception->getCode() === '23000') {
