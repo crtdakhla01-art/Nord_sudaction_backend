@@ -7,6 +7,7 @@ use App\Models\Inscription;
 use App\Services\Email\EmailDeliveryService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SendInscriptionSubmissionEmail
 {
@@ -17,6 +18,17 @@ class SendInscriptionSubmissionEmail
 
     public function handle(InscriptionSubmitted $event): void
     {
+        $sendTraceId = trim((string) ($event->sendTraceId ?? ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
+        Log::info('Inscription listener started', [
+            'send_trace_id' => $sendTraceId,
+            'inscription_id' => $event->inscriptionId,
+            'queue_connection' => config('queue.default'),
+        ]);
+
         $inscription = Inscription::query()->find($event->inscriptionId);
 
         if (! $inscription) {
@@ -80,10 +92,14 @@ class SendInscriptionSubmissionEmail
                 'reply_to_name' => $inscription->full_name,
                 'attachments' => $attachments,
                 'tags' => ['inscription-submission'],
+                'headers' => [
+                    'X-Send-Trace-Id' => $sendTraceId,
+                ],
             ]);
 
             if (! $result->success) {
                 Log::warning('Inscription notification mail failed', [
+                    'send_trace_id' => $sendTraceId,
                     'inscription_id' => $event->inscriptionId,
                     'recipient' => $recipient,
                     'status' => $result->status,
@@ -97,6 +113,7 @@ class SendInscriptionSubmissionEmail
             }
 
             Log::info('Inscription notification mail delivery succeeded', [
+                'send_trace_id' => $sendTraceId,
                 'inscription_id' => $event->inscriptionId,
                 'recipient' => $recipient,
                 'status' => $result->status,
@@ -105,6 +122,7 @@ class SendInscriptionSubmissionEmail
             ]);
         } catch (\Throwable $exception) {
             Log::warning('Inscription notification mail failed', [
+                'send_trace_id' => $sendTraceId,
                 'inscription_id' => $event->inscriptionId,
                 'recipient' => $recipient,
                 'status' => 'failed',

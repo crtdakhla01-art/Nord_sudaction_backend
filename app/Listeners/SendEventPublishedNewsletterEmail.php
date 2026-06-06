@@ -2,47 +2,47 @@
 
 namespace App\Listeners;
 
-use App\Events\OpportunityAccepted;
+use App\Events\EventPublished;
+use App\Models\Event;
 use App\Models\NewsletterSubscriber;
-use App\Models\Opportunity;
 use App\Services\Newsletter\NewsletterDeliveryService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class SendOpportunityAcceptedNewsletterEmail
+class SendEventPublishedNewsletterEmail
 {
     public function __construct(
         private readonly NewsletterDeliveryService $newsletterDeliveryService,
     ) {
     }
 
-    public function handle(OpportunityAccepted $event): void
+    public function handle(EventPublished $event): void
     {
         $sendTraceId = trim((string) ($event->sendTraceId ?? ''));
         if ($sendTraceId === '') {
             $sendTraceId = (string) Str::uuid();
         }
 
-        Log::info('Opportunity accepted newsletter listener started', [
+        Log::info('Event published newsletter listener started', [
             'send_trace_id' => $sendTraceId,
-            'opportunity_id' => $event->opportunityId,
+            'event_id' => $event->eventId,
             'queue_connection' => config('queue.default'),
         ]);
 
-        $opportunity = Opportunity::query()->find($event->opportunityId);
+        $publishedEvent = Event::query()->find($event->eventId);
 
-        if (! $opportunity) {
+        if (! $publishedEvent) {
             return;
         }
 
-        $title = trim((string) $opportunity->titre);
-        $summary = trim((string) ($opportunity->description ?? ''));
+        $title = trim((string) $publishedEvent->title);
+        $summary = trim((string) ($publishedEvent->description ?? ''));
         if ($summary === '') {
-            $summary = 'Une nouvelle opportunité est disponible.';
+            $summary = 'Un nouvel evenement est disponible.';
         }
 
-        $headline = $title !== '' ? "Nouvelle opportunité : {$title}" : 'Nouvelle opportunité disponible';
-        $contentUrl = $this->publicBaseUrl() . '/opportunities/' . $opportunity->id;
+        $headline = $title !== '' ? "Nouvel evenement : {$title}" : 'Nouvel evenement disponible';
+        $contentUrl = $this->publicBaseUrl() . '/events/' . $publishedEvent->id;
 
         NewsletterSubscriber::query()
             ->where('consent', true)
@@ -59,7 +59,7 @@ class SendOpportunityAcceptedNewsletterEmail
                         Log::warning('Newsletter recipient skipped due to missing identity data', [
                             'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
-                            'content_type' => 'opportunity',
+                            'content_type' => 'event',
                             'content_url' => $contentUrl,
                         ]);
 
@@ -74,7 +74,7 @@ class SendOpportunityAcceptedNewsletterEmail
                             'headline' => $headline,
                             'summary' => $summary,
                             'content_url' => $contentUrl,
-                            'content_type' => 'opportunity',
+                            'content_type' => 'event',
                             'unsubscribe_url' => $this->unsubscribeUrl($unsubscribeToken),
                             'send_trace_id' => $sendTraceId,
                         ]);
@@ -87,7 +87,7 @@ class SendOpportunityAcceptedNewsletterEmail
                                 'send_trace_id' => $sendTraceId,
                                 'subscriber_id' => $subscriber->id,
                                 'recipient_email' => $email,
-                                'content_type' => 'opportunity',
+                                'content_type' => 'event',
                                 'content_url' => $contentUrl,
                                 'delivery_driver' => $this->newsletterDeliveryService->driver(),
                                 'status' => $result->status,
@@ -105,7 +105,7 @@ class SendOpportunityAcceptedNewsletterEmail
                             'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
                             'recipient_email' => $email,
-                            'content_type' => 'opportunity',
+                            'content_type' => 'event',
                             'content_url' => $contentUrl,
                             'delivery_driver' => $this->newsletterDeliveryService->driver(),
                             'status' => $result->status,
@@ -119,7 +119,7 @@ class SendOpportunityAcceptedNewsletterEmail
                             'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
                             'recipient_email' => $email,
-                            'content_type' => 'opportunity',
+                            'content_type' => 'event',
                             'content_url' => $contentUrl,
                             'delivery_driver' => $this->newsletterDeliveryService->driver(),
                             'status' => 'failed',

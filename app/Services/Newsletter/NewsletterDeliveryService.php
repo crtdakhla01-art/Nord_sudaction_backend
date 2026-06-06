@@ -14,7 +14,7 @@ class NewsletterDeliveryService
     }
 
     /**
-     * @param array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string} $message
+     * @param array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string,send_trace_id?:string} $message
      */
     public function sendToRecipient(array $message): EmailDeliveryResult
     {
@@ -39,7 +39,7 @@ class NewsletterDeliveryService
     /**
      * Placeholder for phase 2 batch mode support.
      *
-     * @param array<int, array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string}> $messages
+     * @param array<int, array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string,send_trace_id?:string}> $messages
      * @return array<int, EmailDeliveryResult>
      */
     public function sendBatch(array $messages): array
@@ -48,7 +48,7 @@ class NewsletterDeliveryService
     }
 
     /**
-     * @param array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string} $message
+     * @param array{recipient_email:string,recipient_name:string,headline:string,summary:string,content_url:string,content_type:string,unsubscribe_url:string,send_trace_id?:string} $message
      */
     private function sendViaBrevoApi(array $message): EmailDeliveryResult
     {
@@ -75,6 +75,11 @@ class NewsletterDeliveryService
                 'List-Unsubscribe' => $listUnsubscribeValue,
                 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
             ];
+        }
+
+        $sendTraceId = trim((string) ($message['send_trace_id'] ?? ''));
+        if ($sendTraceId !== '') {
+            $headers['X-Send-Trace-Id'] = $sendTraceId;
         }
 
         return $this->emailDeliveryService->send([

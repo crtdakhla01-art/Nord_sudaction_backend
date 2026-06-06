@@ -11,7 +11,9 @@ use App\Services\HtmlSanitizationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdminPostController extends Controller
 {
@@ -36,6 +38,11 @@ class AdminPostController extends Controller
 
     public function store(StorePostRequest $request): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('media')) {
@@ -54,8 +61,20 @@ class AdminPostController extends Controller
 
         $post = $this->createPostWithSlugRetry($data);
 
+        Log::info('Post created', [
+            'send_trace_id' => $sendTraceId,
+            'post_id' => $post->id,
+            'status' => $post->status,
+        ]);
+
         if ($post->status === 'published') {
-            event(new PostPublished($post->id));
+            event(new PostPublished($post->id, $sendTraceId));
+
+            Log::info('Post published event dispatched from store', [
+                'send_trace_id' => $sendTraceId,
+                'post_id' => $post->id,
+                'event' => PostPublished::class,
+            ]);
         }
 
         return response()->json([
@@ -72,6 +91,11 @@ class AdminPostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
         $wasPublished = $post->status === 'published';
         $data = $request->validated();
 
@@ -99,8 +123,21 @@ class AdminPostController extends Controller
 
         $this->updatePostWithSlugRetry($post, $data);
 
+        Log::info('Post updated', [
+            'send_trace_id' => $sendTraceId,
+            'post_id' => $post->id,
+            'was_published' => $wasPublished,
+            'is_published_now' => $post->fresh()->status === 'published',
+        ]);
+
         if (! $wasPublished && $post->fresh()->status === 'published') {
-            event(new PostPublished($post->id));
+            event(new PostPublished($post->id, $sendTraceId));
+
+            Log::info('Post published event dispatched from update', [
+                'send_trace_id' => $sendTraceId,
+                'post_id' => $post->id,
+                'event' => PostPublished::class,
+            ]);
         }
 
         return response()->json([

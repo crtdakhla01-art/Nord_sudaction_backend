@@ -7,6 +7,7 @@ use App\Models\NewsletterSubscriber;
 use App\Models\Post;
 use App\Services\Newsletter\NewsletterDeliveryService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SendPostPublishedNewsletterEmail
 {
@@ -17,6 +18,17 @@ class SendPostPublishedNewsletterEmail
 
     public function handle(PostPublished $event): void
     {
+        $sendTraceId = trim((string) ($event->sendTraceId ?? ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
+        Log::info('Post published newsletter listener started', [
+            'send_trace_id' => $sendTraceId,
+            'post_id' => $event->postId,
+            'queue_connection' => config('queue.default'),
+        ]);
+
         $post = Post::query()->find($event->postId);
 
         if (! $post) {
@@ -43,13 +55,14 @@ class SendPostPublishedNewsletterEmail
             ->where('is_suppressed', false)
             ->orderBy('id')
             ->select(['id', 'name', 'email', 'unsubscribe_token'])
-            ->chunkById(100, function ($subscribers) use ($headline, $summary, $contentUrl): void {
+            ->chunkById(100, function ($subscribers) use ($headline, $summary, $contentUrl, $sendTraceId): void {
                 foreach ($subscribers as $subscriber) {
                     $email = trim((string) $subscriber->email);
                     $unsubscribeToken = trim((string) $subscriber->unsubscribe_token);
 
                     if ($email === '' || $unsubscribeToken === '') {
                         Log::warning('Newsletter recipient skipped due to missing identity data', [
+                            'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
                             'content_type' => 'post',
                             'content_url' => $contentUrl,
@@ -68,6 +81,7 @@ class SendPostPublishedNewsletterEmail
                             'content_url' => $contentUrl,
                             'content_type' => 'post',
                             'unsubscribe_url' => $this->unsubscribeUrl($unsubscribeToken),
+                            'send_trace_id' => $sendTraceId,
                         ]);
 
                         if (! $result->success) {
@@ -75,6 +89,7 @@ class SendPostPublishedNewsletterEmail
                             $this->suppressOnHardBounce($subscriber->id, $normalizedErrorText);
 
                             Log::warning('Newsletter content delivery failed', [
+                                'send_trace_id' => $sendTraceId,
                                 'subscriber_id' => $subscriber->id,
                                 'recipient_email' => $email,
                                 'content_type' => 'post',
@@ -92,6 +107,7 @@ class SendPostPublishedNewsletterEmail
                         }
 
                         Log::info('Newsletter content delivery succeeded', [
+                            'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
                             'recipient_email' => $email,
                             'content_type' => 'post',
@@ -105,6 +121,7 @@ class SendPostPublishedNewsletterEmail
                         $this->suppressOnHardBounce($subscriber->id, $exception->getMessage());
 
                         Log::warning('Newsletter content delivery failed', [
+                            'send_trace_id' => $sendTraceId,
                             'subscriber_id' => $subscriber->id,
                             'recipient_email' => $email,
                             'content_type' => 'post',

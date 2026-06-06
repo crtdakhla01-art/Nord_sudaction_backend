@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Events\EventPublished;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
@@ -10,7 +11,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -37,6 +40,11 @@ class AdminEventController extends Controller
      */
     public function store(StoreEventRequest $request): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
         $data = $request->validated();
         $galleryItems = $data['gallery'] ?? [];
         $storedPaths = [];
@@ -87,6 +95,14 @@ class AdminEventController extends Controller
 
             throw $exception;
         }
+
+        event(new EventPublished($event->id, $sendTraceId));
+
+        Log::info('Event published event dispatched from store', [
+            'send_trace_id' => $sendTraceId,
+            'event_id' => $event->id,
+            'event' => EventPublished::class,
+        ]);
 
         return response()->json($event->load('gallery'), 201);
     }

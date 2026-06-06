@@ -10,7 +10,10 @@ class InscriptionSubmitted
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public readonly int $inscriptionId)
+    public function __construct(
+        public readonly int $inscriptionId,
+        public readonly ?string $sendTraceId = null,
+    )
     {
     }
 }

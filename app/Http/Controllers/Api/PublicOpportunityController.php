@@ -9,6 +9,8 @@ use App\Models\Opportunity;
 use App\Models\TypeOpportunity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PublicOpportunityController extends Controller
 {
@@ -39,6 +41,16 @@ class PublicOpportunityController extends Controller
 
     public function store(StoreOpportunityRequest $request): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
+        Log::info('Opportunity submission flow started', [
+            'send_trace_id' => $sendTraceId,
+            'ip' => $request->ip(),
+        ]);
+
         $data = $request->validated();
 
         $typeName = match ($data['type_key']) {
@@ -91,7 +103,19 @@ class PublicOpportunityController extends Controller
 
         $opportunity->load(['type:id,name', 'images:id,opportunity_id,path,sort_order']);
 
-        event(new OpportunitySubmitted($opportunity->id));
+        Log::info('Opportunity created', [
+            'send_trace_id' => $sendTraceId,
+            'opportunity_id' => $opportunity->id,
+            'status' => $opportunity->status,
+        ]);
+
+        event(new OpportunitySubmitted($opportunity->id, $sendTraceId));
+
+        Log::info('Opportunity submitted event dispatched', [
+            'send_trace_id' => $sendTraceId,
+            'opportunity_id' => $opportunity->id,
+            'event' => OpportunitySubmitted::class,
+        ]);
 
         return response()->json([
             'success' => true,

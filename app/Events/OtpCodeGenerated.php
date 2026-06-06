@@ -13,6 +13,7 @@ class OtpCodeGenerated
     public function __construct(
         public readonly int $userId,
         public readonly string $plainCode,
+        public readonly ?string $sendTraceId = null,
     ) {
     }
 }

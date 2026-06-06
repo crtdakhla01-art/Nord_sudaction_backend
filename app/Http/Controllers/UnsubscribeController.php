@@ -30,14 +30,14 @@ class UnsubscribeController extends Controller
             $subscriber->update($updates);
 
             return view('newsletter.unsubscribe-status', [
-                'title' => 'Desabonnement confirme',
-                'message' => 'Vous avez ete desabonne avec succes de notre newsletter.',
+                'title' => 'Désabonnement confirmé',
+                'message' => 'Vous avez été désabonné avec succès de notre newsletter.',
             ]);
         }
 
         return view('newsletter.unsubscribe-status', [
-            'title' => 'Deja desabonne',
-            'message' => 'Vous etes deja desabonne de notre newsletter.',
+            'title' => 'Déjà désabonné',
+            'message' => 'Vous êtes déjà désabonné de notre newsletter.',
         ]);
     }
 }

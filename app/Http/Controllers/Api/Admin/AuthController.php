@@ -41,6 +41,11 @@ class AuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
         $normalizedEmail = ValidationPatterns::normalizeEmail($request->input('email'));
         $request->merge(['email' => $normalizedEmail]);
 
@@ -107,6 +112,7 @@ class AuthController extends Controller
             return $this->successResponse('api.success_otp_sent', [
                 'otp_required' => true,
                 'challenge_id' => $existingChallengeId,
+                'otp_delivery_email_masked' => $this->maskEmail($user->email),
             ]);
         }
 
@@ -138,6 +144,7 @@ class AuthController extends Controller
                 return $this->successResponse('api.success_otp_sent', [
                     'otp_required' => true,
                     'challenge_id' => $existingChallengeId,
+                    'otp_delivery_email_masked' => $this->maskEmail($user->email),
                     'expires_in_seconds' => self::OTP_TTL_MINUTES * 60,
                 ]);
             }
@@ -159,9 +166,10 @@ class AuthController extends Controller
             $challengeId = (string) Str::uuid();
             $this->storeOtpChallenge($challengeId, $user, 0);
 
-            event(new OtpCodeGenerated($user->id, $plainCode));
+            event(new OtpCodeGenerated($user->id, $plainCode, $sendTraceId));
 
             Log::info('OTP generated', [
+                'send_trace_id' => $sendTraceId,
                 'user_id' => $user->id,
                 'email_masked' => $this->maskEmail($user->email),
                 'challenge_id' => $challengeId,
@@ -171,6 +179,7 @@ class AuthController extends Controller
             return $this->successResponse('api.success_otp_sent', [
                 'otp_required' => true,
                 'challenge_id' => $challengeId,
+                'otp_delivery_email_masked' => $this->maskEmail($user->email),
                 'expires_in_seconds' => self::OTP_TTL_MINUTES * 60,
             ]);
         } finally {

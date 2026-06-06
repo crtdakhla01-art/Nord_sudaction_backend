@@ -10,7 +10,10 @@ class PostPublished
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public readonly int $postId)
+    public function __construct(
+        public readonly int $postId,
+        public readonly ?string $sendTraceId = null,
+    )
     {
     }
 }

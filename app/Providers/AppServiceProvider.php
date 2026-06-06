@@ -3,12 +3,14 @@
 namespace App\Providers;
 
 use App\Events\ContactMessageCreated;
+use App\Events\EventPublished;
 use App\Events\InscriptionSubmitted;
 use App\Events\OpportunityAccepted;
 use App\Events\OpportunitySubmitted;
 use App\Events\OtpCodeGenerated;
 use App\Events\PostPublished;
 use App\Listeners\SendContactMessageEmail;
+use App\Listeners\SendEventPublishedNewsletterEmail;
 use App\Listeners\SendInscriptionSubmissionEmail;
 use App\Listeners\SendOpportunityAcceptedNewsletterEmail;
 use App\Listeners\SendOpportunitySubmissionEmail;
@@ -39,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OpportunitySubmitted::class, SendOpportunitySubmissionEmail::class);
         Event::listen(OtpCodeGenerated::class, SendOtpCodeEmail::class);
         Event::listen(PostPublished::class, SendPostPublishedNewsletterEmail::class);
+        Event::listen(EventPublished::class, SendEventPublishedNewsletterEmail::class);
     }
 }

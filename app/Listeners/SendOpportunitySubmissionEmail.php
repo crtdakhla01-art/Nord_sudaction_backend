@@ -7,6 +7,7 @@ use App\Models\Opportunity;
 use App\Services\Email\EmailDeliveryService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SendOpportunitySubmissionEmail
 {
@@ -17,6 +18,17 @@ class SendOpportunitySubmissionEmail
 
     public function handle(OpportunitySubmitted $event): void
     {
+        $sendTraceId = trim((string) ($event->sendTraceId ?? ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
+        Log::info('Opportunity submission listener started', [
+            'send_trace_id' => $sendTraceId,
+            'opportunity_id' => $event->opportunityId,
+            'queue_connection' => config('queue.default'),
+        ]);
+
         $opportunity = Opportunity::query()
             ->with(['type:id,name', 'images:id,opportunity_id,path,sort_order'])
             ->find($event->opportunityId);
@@ -54,10 +66,14 @@ class SendOpportunitySubmissionEmail
                 'reply_to_email' => $opportunity->email,
                 'reply_to_name' => trim($opportunity->first_name . ' ' . $opportunity->last_name),
                 'tags' => ['opportunity-submission'],
+                'headers' => [
+                    'X-Send-Trace-Id' => $sendTraceId,
+                ],
             ]);
 
             if (! $result->success) {
                 Log::warning('Opportunity notification mail failed', [
+                    'send_trace_id' => $sendTraceId,
                     'opportunity_id' => $event->opportunityId,
                     'recipient' => $recipient,
                     'status' => $result->status,
@@ -71,6 +87,7 @@ class SendOpportunitySubmissionEmail
             }
 
             Log::info('Opportunity notification mail delivery succeeded', [
+                'send_trace_id' => $sendTraceId,
                 'opportunity_id' => $event->opportunityId,
                 'recipient' => $recipient,
                 'status' => $result->status,
@@ -79,6 +96,7 @@ class SendOpportunitySubmissionEmail
             ]);
         } catch (\Throwable $exception) {
             Log::warning('Opportunity notification mail failed', [
+                'send_trace_id' => $sendTraceId,
                 'opportunity_id' => $event->opportunityId,
                 'recipient' => $recipient,
                 'status' => 'failed',

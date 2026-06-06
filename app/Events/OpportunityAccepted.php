@@ -10,7 +10,10 @@ class OpportunityAccepted
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public readonly int $opportunityId)
+    public function __construct(
+        public readonly int $opportunityId,
+        public readonly ?string $sendTraceId = null,
+    )
     {
     }
 }

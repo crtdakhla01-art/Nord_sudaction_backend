@@ -7,11 +7,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreInscriptionRequest;
 use App\Models\Inscription;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class InscriptionController extends Controller
 {
     public function store(StoreInscriptionRequest $request): JsonResponse
     {
+        $sendTraceId = trim((string) $request->header('X-Send-Trace-Id', ''));
+        if ($sendTraceId === '') {
+            $sendTraceId = (string) Str::uuid();
+        }
+
+        Log::info('Inscription flow started', [
+            'send_trace_id' => $sendTraceId,
+            'ip' => $request->ip(),
+        ]);
+
         $payload = $request->validated();
         $paymentProofPath = $request->file('payment_proof')?->store('inscriptions/payment-proofs', 'public');
         $cinCopyPath = $request->file('cin_copy')?->store('inscriptions/cin-copies', 'public');
@@ -25,7 +37,18 @@ class InscriptionController extends Controller
 
         $inscription = Inscription::query()->create($payload);
 
-        event(new InscriptionSubmitted($inscription->id));
+        Log::info('Inscription created', [
+            'send_trace_id' => $sendTraceId,
+            'inscription_id' => $inscription->id,
+        ]);
+
+        event(new InscriptionSubmitted($inscription->id, $sendTraceId));
+
+        Log::info('Inscription event dispatched', [
+            'send_trace_id' => $sendTraceId,
+            'inscription_id' => $inscription->id,
+            'event' => InscriptionSubmitted::class,
+        ]);
 
         return response()->json([
             'success' => true,

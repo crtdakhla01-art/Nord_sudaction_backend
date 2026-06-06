@@ -9,9 +9,12 @@ class BrevoApiClient
 {
     public function sendTransactionalEmail(array $payload): EmailDeliveryResult
     {
+        $sendTraceId = $payload['headers']['X-Send-Trace-Id'] ?? null;
+
         $apiKey = trim((string) config('services.email.brevo.api_key', ''));
 
         Log::debug('BrevoApiClient request start', [
+            'send_trace_id' => $sendTraceId,
             'has_api_key' => $apiKey !== '',
             'to' => $payload['to'] ?? [],
             'subject' => $payload['subject'] ?? null,
@@ -37,6 +40,7 @@ class BrevoApiClient
                 ->post($baseUrl . '/v3/smtp/email', $payload);
         } catch (\Throwable $exception) {
             Log::warning('BrevoApiClient request failed with exception', [
+                'send_trace_id' => $sendTraceId,
                 'exception' => $exception::class,
                 'message' => $exception->getMessage(),
             ]);
@@ -52,6 +56,7 @@ class BrevoApiClient
         }
 
         Log::debug('BrevoApiClient response received', [
+            'send_trace_id' => $sendTraceId,
             'status' => $response->status(),
             'body' => $response->body(),
         ]);
@@ -67,6 +72,7 @@ class BrevoApiClient
             }
 
             Log::debug('BrevoApiClient messageId extracted', [
+                'send_trace_id' => $sendTraceId,
                 'message_id' => is_string($messageId) ? $messageId : null,
             ]);
 
@@ -86,6 +92,7 @@ class BrevoApiClient
         $errorMessage = (string) ($errorPayload['message'] ?? $errorPayload['body'] ?? 'Brevo transactional API request failed.');
 
         Log::warning('BrevoApiClient failure payload', [
+            'send_trace_id' => $sendTraceId,
             'status' => $response->status(),
             'error_payload' => $errorPayload,
         ]);

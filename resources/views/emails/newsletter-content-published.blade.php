@@ -14,7 +14,7 @@
 
     <p>
         <a href="{{ $contentUrl }}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:#ffffff;text-decoration:none;border-radius:6px;">
-            Voir {{ $contentType === 'opportunity' ? 'l\'opportunité' : 'l\'actualité' }}
+            Voir {{ $contentType === 'opportunity' ? 'l\'opportunité' : ($contentType === 'event' ? 'l\'événement' : 'l\'actualité') }}
         </a>
     </p>
 

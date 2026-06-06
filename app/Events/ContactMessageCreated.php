@@ -10,7 +10,10 @@ class ContactMessageCreated
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public readonly int $contactMessageId)
+    public function __construct(
+        public readonly int $contactMessageId,
+        public readonly ?string $sendTraceId = null,
+    )
     {
     }
 }
