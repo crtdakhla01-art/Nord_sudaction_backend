@@ -9,6 +9,7 @@ use App\Events\OpportunityAccepted;
 use App\Events\OpportunitySubmitted;
 use App\Events\OtpCodeGenerated;
 use App\Events\PostPublished;
+use App\Events\SmaraDiscoveryRegistrationSubmitted;
 use App\Listeners\SendContactMessageEmail;
 use App\Listeners\SendEventPublishedNewsletterEmail;
 use App\Listeners\SendInscriptionSubmissionEmail;
@@ -16,6 +17,7 @@ use App\Listeners\SendOpportunityAcceptedNewsletterEmail;
 use App\Listeners\SendOpportunitySubmissionEmail;
 use App\Listeners\SendOtpCodeEmail;
 use App\Listeners\SendPostPublishedNewsletterEmail;
+use App\Listeners\SendSmaraDiscoveryRegistrationEmail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         // Register all event listeners
         Event::listen(ContactMessageCreated::class, SendContactMessageEmail::class);
         Event::listen(InscriptionSubmitted::class, SendInscriptionSubmissionEmail::class);
+        Event::listen(SmaraDiscoveryRegistrationSubmitted::class, SendSmaraDiscoveryRegistrationEmail::class);
         Event::listen(OpportunityAccepted::class, SendOpportunityAcceptedNewsletterEmail::class);
         Event::listen(OpportunitySubmitted::class, SendOpportunitySubmissionEmail::class);
         Event::listen(OtpCodeGenerated::class, SendOtpCodeEmail::class);
