@@ -30,8 +30,6 @@ class StoreSmaraDiscoveryRegistrationRequest extends FormRequest
             'interest_level' => ['required', 'string', Rule::in(SmaraDiscoveryRegistration::INTEREST_LEVELS)],
             'participants_count' => ['required', 'string', Rule::in(SmaraDiscoveryRegistration::PARTICIPANTS_COUNTS)],
             'preferred_duration' => ['required', 'string', Rule::in(SmaraDiscoveryRegistration::PREFERRED_DURATIONS)],
-            'departure_city' => ['required', 'string', 'max:120'],
-            'budget' => ['required', 'string', 'max:100'],
             'preferred_activities' => ['required', 'array', 'min:1'],
             'preferred_activities.*' => ['required', 'string', Rule::in(SmaraDiscoveryRegistration::ACTIVITIES)],
             'notify_first_date' => ['required', 'boolean'],

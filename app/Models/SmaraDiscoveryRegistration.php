@@ -42,6 +42,7 @@ class SmaraDiscoveryRegistration extends Model
         'archaeological_sites',
         'hassani_culture',
         'wildlife_observation',
+        'quad_outing',
         'photography',
     ];
 
@@ -55,8 +56,6 @@ class SmaraDiscoveryRegistration extends Model
         'interest_level',
         'participants_count',
         'preferred_duration',
-        'departure_city',
-        'budget',
         'preferred_activities',
         'notify_first_date',
     ];

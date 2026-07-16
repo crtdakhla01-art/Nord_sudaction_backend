@@ -24,8 +24,6 @@ class SmaraDiscoveryRegistrationResource extends JsonResource
             'interest_level' => $this->interest_level,
             'participants_count' => $this->participants_count,
             'preferred_duration' => $this->preferred_duration,
-            'departure_city' => $this->departure_city,
-            'budget' => $this->budget,
             'preferred_activities' => $this->preferred_activities,
             'notify_first_date' => $this->notify_first_date,
             'created_at' => $this->created_at?->toIso8601String(),

@@ -24,8 +24,7 @@ class AdminSmaraDiscoveryRegistrationController extends Controller
                     $inner->where('full_name', 'like', '%'.$search.'%')
                         ->orWhere('email', 'like', '%'.$search.'%')
                         ->orWhere('phone', 'like', '%'.$search.'%')
-                        ->orWhere('city', 'like', '%'.$search.'%')
-                        ->orWhere('departure_city', 'like', '%'.$search.'%');
+                        ->orWhere('city', 'like', '%'.$search.'%');
                 });
             })
             ->when(

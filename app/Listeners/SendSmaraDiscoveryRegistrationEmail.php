@@ -43,6 +43,7 @@ class SendSmaraDiscoveryRegistrationEmail
         'archaeological_sites' => 'Sites archéologiques',
         'hassani_culture' => 'Culture hassanie',
         'wildlife_observation' => 'Observation de la faune et de la flore',
+        'quad_outing' => 'Sortie en quad',
         'photography' => 'Photographie',
     ];
 
@@ -88,8 +89,6 @@ class SendSmaraDiscoveryRegistrationEmail
                 .'Niveau d\'intérêt : '.$this->label(self::INTEREST_LEVEL_LABELS, $registration->interest_level)."\n"
                 .'Nombre de participants : '.$this->label(self::PARTICIPANTS_COUNT_LABELS, $registration->participants_count)."\n"
                 .'Durée préférée : '.$this->label(self::PREFERRED_DURATION_LABELS, $registration->preferred_duration)."\n"
-                ."Ville de départ : {$registration->departure_city}\n"
-                ."Budget : {$registration->budget}\n"
                 .'Activités sélectionnées : '.($activities->isNotEmpty() ? $activities->implode(', ') : '-')."\n"
                 .'Informé(e) en priorité de la première date : '.($registration->notify_first_date ? 'Oui' : 'Non')."\n"
                 .'Date de soumission : '.($registration->created_at?->format('Y-m-d H:i:s') ?? '-');
