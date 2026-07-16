@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminEventController;
 use App\Http\Controllers\Api\Admin\AdminInscriptionController;
 use App\Http\Controllers\Api\Admin\AdminOpportunityController;
-use App\Http\Controllers\Api\Admin\AdminPostController;
+use App\Http\Controllers\Api\Admin\AdminSmaraDiscoveryRegistrationController;
 use App\Http\Controllers\Api\Admin\AuthController;
 use App\Http\Controllers\Api\ContactMessageController;
 use App\Http\Controllers\Api\CounterController;
@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\NewsletterSubscriberController;
 use App\Http\Controllers\Api\PublicEventController;
 use App\Http\Controllers\Api\PublicOpportunityController;
 use App\Http\Controllers\Api\PublicPostController;
-use App\Http\Controllers\Api\PublicTypeOpportunityController;
+use App\Http\Controllers\Api\SmaraDiscoveryRegistrationController;
 use App\Models\Role;
 use Illuminate\Support\Facades\Route;
 
@@ -34,7 +34,7 @@ Route::get('/types-opportunities', [PublicTypeOpportunityController::class, 'ind
 Route::get('/visitor-up', [CounterController::class, 'up'])->middleware('throttle:10,1');
 Route::post('/contact', [ContactMessageController::class, 'store'])->middleware('throttle:5,1');
 Route::post('/inscriptions', [InscriptionController::class, 'store'])->middleware('throttle:5,1');
-Route::post('/newsletter/subscribe', [NewsletterSubscriberController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/smara-discovery-registrations', [SmaraDiscoveryRegistrationController::class, 'store'])->middleware('throttle:5,1');
 
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -63,6 +63,8 @@ Route::prefix('admin')->group(function () {
             Route::put('/opportunities/{opportunity}/reject', [AdminOpportunityController::class, 'reject']);
             Route::get('/inscriptions', [AdminInscriptionController::class, 'index']);
             Route::put('/inscriptions/{inscription}/payment-status', [AdminInscriptionController::class, 'updatePaymentStatus']);
+            Route::get('/smara-discovery-registrations', [AdminSmaraDiscoveryRegistrationController::class, 'index']);
+            Route::get('/smara-discovery-registrations/{smaraDiscoveryRegistration}', [AdminSmaraDiscoveryRegistrationController::class, 'show']);
         });
 
         // Content-management endpoints remain admin-only by design (least privilege).
@@ -79,6 +81,7 @@ Route::prefix('admin')->group(function () {
             Route::post('/gallery-categories', [GalleryCategoryController::class, 'store']);
             Route::put('/gallery-categories/{gallery_category}', [GalleryCategoryController::class, 'update']);
             Route::delete('/gallery-categories/{gallery_category}', [GalleryCategoryController::class, 'destroy']);
+            Route::delete('/smara-discovery-registrations/{smaraDiscoveryRegistration}', [AdminSmaraDiscoveryRegistrationController::class, 'destroy']);
         });
     });
 });
