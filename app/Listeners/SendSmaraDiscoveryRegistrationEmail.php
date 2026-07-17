@@ -6,6 +6,7 @@ use App\Events\SmaraDiscoveryRegistrationSubmitted;
 use App\Models\SmaraDiscoveryRegistration;
 use App\Services\Email\EmailDeliveryService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
 class SendSmaraDiscoveryRegistrationEmail
@@ -79,24 +80,49 @@ class SendSmaraDiscoveryRegistrationEmail
                 ->filter()
                 ->values();
 
-            $body = "Nouvelle inscription Smara Discovery Experience\n\n"
+            $activitiesText = $activities->isNotEmpty() ? $activities->implode(', ') : '-';
+            $ageGroup = $this->label(self::AGE_GROUP_LABELS, $registration->age_group);
+            $interestLevel = $this->label(self::INTEREST_LEVEL_LABELS, $registration->interest_level);
+            $participantsCount = $this->label(self::PARTICIPANTS_COUNT_LABELS, $registration->participants_count);
+            $preferredDuration = $this->label(self::PREFERRED_DURATION_LABELS, $registration->preferred_duration);
+            $hasVisitedEsSmara = $registration->has_visited_es_smara ? 'Oui' : 'Non';
+            $notifyFirstDate = $registration->notify_first_date ? 'Oui' : 'Non';
+            $submittedAt = $registration->created_at?->format('Y-m-d H:i:s') ?? '-';
+
+            $textBody = "Nouvelle inscription Smara Discovery Experience\n\n"
                 ."Nom et prénom : {$registration->full_name}\n"
                 ."Ville de résidence : {$registration->city}\n"
                 ."Téléphone : {$registration->phone}\n"
                 ."E-mail : {$registration->email}\n"
-                .'Tranche d\'âge : '.$this->label(self::AGE_GROUP_LABELS, $registration->age_group)."\n"
-                .'A déjà visité Es-Smara : '.($registration->has_visited_es_smara ? 'Oui' : 'Non')."\n"
-                .'Niveau d\'intérêt : '.$this->label(self::INTEREST_LEVEL_LABELS, $registration->interest_level)."\n"
-                .'Nombre de participants : '.$this->label(self::PARTICIPANTS_COUNT_LABELS, $registration->participants_count)."\n"
-                .'Durée préférée : '.$this->label(self::PREFERRED_DURATION_LABELS, $registration->preferred_duration)."\n"
-                .'Activités sélectionnées : '.($activities->isNotEmpty() ? $activities->implode(', ') : '-')."\n"
-                .'Informé(e) en priorité de la première date : '.($registration->notify_first_date ? 'Oui' : 'Non')."\n"
-                .'Date de soumission : '.($registration->created_at?->format('Y-m-d H:i:s') ?? '-');
+                ."Tranche d'âge : {$ageGroup}\n"
+                ."A déjà visité Es-Smara : {$hasVisitedEsSmara}\n"
+                ."Niveau d'intérêt : {$interestLevel}\n"
+                ."Nombre de participants : {$participantsCount}\n"
+                ."Durée préférée : {$preferredDuration}\n"
+                ."Activités sélectionnées : {$activitiesText}\n"
+                ."Informé(e) en priorité de la première date : {$notifyFirstDate}\n"
+                ."Date de soumission : {$submittedAt}";
+
+            $htmlBody = View::make('emails.smara-discovery-registration', [
+                'fullName' => $registration->full_name,
+                'city' => $registration->city,
+                'phone' => $registration->phone,
+                'email' => $registration->email,
+                'ageGroup' => $ageGroup,
+                'hasVisitedEsSmara' => $hasVisitedEsSmara,
+                'interestLevel' => $interestLevel,
+                'participantsCount' => $participantsCount,
+                'preferredDuration' => $preferredDuration,
+                'activities' => $activitiesText,
+                'notifyFirstDate' => $notifyFirstDate,
+                'submittedAt' => $submittedAt,
+            ])->render();
 
             $result = $this->emailDeliveryService->send([
                 'to_email' => $recipient,
                 'subject' => "Nouvelle inscription Smara Discovery : {$registration->full_name}",
-                'text_content' => $body,
+                'text_content' => $textBody,
+                'html_content' => $htmlBody,
                 'reply_to_email' => $registration->email,
                 'reply_to_name' => $registration->full_name,
                 'tags' => ['smara-discovery-registration'],
